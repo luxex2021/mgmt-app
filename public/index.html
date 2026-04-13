@@ -336,42 +336,46 @@ textarea{resize:vertical;min-height:72px;}
   </div>
 
   <!-- 検索バー -->
-  <div class="filter-bar">
-    <div class="fg" style="flex:1;max-width:280px;">
-      <label>電話番号で検索</label>
-      <input type="text" id="cust-search" placeholder="電話番号（一部でも可）" oninput="searchCustomers()">
+  <div class="filter-bar" style="margin-bottom:16px;">
+    <div class="fg" style="flex:1;max-width:320px;">
+      <label>電話番号・名前で検索</label>
+      <input type="text" id="cust-search" placeholder="番号 または 名前" oninput="searchCustomers()">
     </div>
     <button class="btn btn-ghost btn-sm" onclick="$('cust-search').value='';loadCustomers()" style="align-self:flex-end">クリア</button>
   </div>
 
   <!-- 統計バナー -->
-  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:18px;" id="cust-stats-grid">
-    <div class="card" style="margin-bottom:0;">
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px;">
+    <div class="card" style="margin-bottom:0;padding:14px 16px;">
       <div class="kpi-label">総顧客数</div>
-      <div class="kpi-value kpi-gold" id="cust-total" style="font-size:24px;color:var(--gold2)">—</div>
+      <div style="font-size:28px;font-weight:700;font-family:'Oswald',sans-serif;color:var(--gold2)" id="cust-total">—</div>
     </div>
-    <div class="card" style="margin-bottom:0;">
+    <div class="card" style="margin-bottom:0;padding:14px 16px;">
       <div class="kpi-label">今月来店</div>
-      <div class="kpi-value" id="cust-this-month" style="font-size:24px;color:var(--green)">—</div>
+      <div style="font-size:28px;font-weight:700;font-family:'Oswald',sans-serif;color:var(--green)" id="cust-this-month">—</div>
     </div>
-    <div class="card" style="margin-bottom:0;">
+    <div class="card" style="margin-bottom:0;padding:14px 16px;">
       <div class="kpi-label">リピーター</div>
-      <div class="kpi-value" id="cust-repeater" style="font-size:24px;color:var(--blue)">—</div>
-      <div class="kpi-sub">2回以上来店</div>
+      <div style="font-size:28px;font-weight:700;font-family:'Oswald',sans-serif;color:var(--blue)" id="cust-repeater">—</div>
+      <div class="kpi-sub">3回以上</div>
     </div>
   </div>
 
-  <!-- 一覧テーブル -->
+  <!-- 件数ラベル -->
+  <div id="cust-count-label" style="font-size:12px;color:var(--text3);margin-bottom:10px;"></div>
+
+  <!-- 一覧テーブル（PCのみ表示） -->
   <div class="card" style="padding:0;overflow:hidden;">
     <div class="tbl-wrap">
       <table>
         <thead>
           <tr>
-            <th>顧客名</th><th>電話番号</th>
-            <th class="num">来店回数</th>
-            <th>初来店</th><th>最終来店</th>
-            <th>最終キャスト</th><th>よく呼ぶキャスト</th>
-            <th>よく使う店舗</th><th>操作</th>
+            <th>顧客名</th>
+            <th>電話番号</th>
+            <th class="num">来店</th>
+            <th>最終来店</th>
+            <th>よく使う店舗</th>
+            <th>最終キャスト</th>
           </tr>
         </thead>
         <tbody id="customer-body"></tbody>
@@ -379,9 +383,10 @@ textarea{resize:vertical;min-height:72px;}
     </div>
     <div class="empty" id="customer-empty" style="display:none">
       <div class="empty-icon">👥</div>
-      <div>顧客データがありません。オーダー入力で電話番号を入力すると自動登録されます。</div>
+      <div style="font-size:13px">顧客データがありません。<br>オーダー入力で電話番号を入力すると自動登録されます。</div>
     </div>
   </div>
+  <div style="margin-top:6px;font-size:11px;color:var(--text3);">※ 行をクリックすると詳細・履歴を表示</div>
 </div>
 
 <!-- ══ 終業報告 ════════════════════════════════════════════ -->
@@ -733,6 +738,17 @@ textarea{resize:vertical;min-height:72px;}
 </div>
 </div>
 
+<!-- 顧客詳細モーダル -->
+<div class="overlay" id="modal-customer-detail" onclick="closeOverlay('modal-customer-detail')">
+<div class="modal" onclick="event.stopPropagation()" style="max-width:780px;">
+  <div class="modal-head">
+    <div class="modal-title" id="cust-detail-title">顧客詳細</div>
+    <button class="modal-close" onclick="closeOverlay('modal-customer-detail')">✕</button>
+  </div>
+  <div id="cust-detail-body"></div>
+</div>
+</div>
+
 <!-- 詳細モーダル -->
 <div class="overlay" id="modal-detail" onclick="closeOverlay('modal-detail')">
 <div class="modal" onclick="event.stopPropagation()" style="max-width:760px;">
@@ -790,59 +806,211 @@ function toggleSidebar(){ $('sidebar').classList.toggle('open'); }
 function closeSidebar(){ if(window.innerWidth<=820) $('sidebar').classList.remove('open'); }
 
 // ─── 顧客管理 ──────────────────────────────────────────
+const STORE_LABEL_C = { dino:'ディーノ石巻', ai:'愛して人妻' };
 
-async function loadCustomers(filterPhone) {
+function custBadge(visits) {
+  if (visits >= 10) return `<span class="badge badge-gold"   style="font-size:10px;padding:2px 7px;margin-left:5px;">常連</span>`;
+  if (visits >= 3)  return `<span class="badge badge-blue"   style="font-size:10px;padding:2px 7px;margin-left:5px;">リピーター</span>`;
+  return '';
+}
+function visitColor(visits) {
+  return visits >= 10 ? 'var(--gold2)' : visits >= 3 ? 'var(--blue)' : 'var(--text2)';
+}
+
+async function loadCustomers(filterVal) {
   const all = await api('GET', '/customers');
 
-  // 統計
-  const now = new Date();
-  const thisMonthStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  // 統計（全件ベース）
+  const m = thisMonth();
   $('cust-total').textContent      = all.length;
-  $('cust-this-month').textContent = all.filter(c => c.lastVisit && c.lastVisit.startsWith(thisMonthStr)).length;
-  $('cust-repeater').textContent   = all.filter(c => c.totalVisits >= 2).length;
+  $('cust-this-month').textContent = all.filter(c => (c.lastVisit||'').startsWith(m)).length;
+  $('cust-repeater').textContent   = all.filter(c => (c.totalVisits||0) >= 3).length;
 
-  // フィルタ
+  // フィルタ（電話番号 or 名前）
   let rows = all;
-  if (filterPhone) {
-    const norm = filterPhone.replace(/[^\d]/g, '');
-    rows = all.filter(c => String(c.phone).includes(norm));
+  if (filterVal && filterVal.trim()) {
+    const q  = filterVal.trim();
+    const qn = q.replace(/[^\d]/g, '');
+    rows = all.filter(c =>
+      (c.name && c.name.includes(q)) ||
+      (qn.length >= 3 && String(c.phone).includes(qn))
+    );
   }
 
   const tbody = $('customer-body'), empty = $('customer-empty');
+  const countEl = $('cust-count-label');
+  countEl.textContent = `${rows.length} 件`;
+
   if (!rows.length) { tbody.innerHTML = ''; empty.style.display = ''; return; }
   empty.style.display = 'none';
 
-  const storeLabel = { dino:'ディーノ石巻', ai:'愛して人妻', '':'—' };
   tbody.innerHTML = rows.map(c => {
-    const visits = c.totalVisits || 0;
-    const badge = visits >= 5
-      ? `<span class="badge badge-gold" style="margin-left:4px">常連</span>`
-      : visits >= 2 ? `<span class="badge badge-blue" style="margin-left:4px">リピーター</span>` : '';
-    return `<tr>
-      <td style="font-weight:500">${esc(c.name || '—')}${badge}</td>
-      <td style="font-family:'DM Mono',monospace;font-size:12px">${esc(c.phone)}</td>
-      <td class="num" style="font-weight:700;color:${visits>=5?'var(--gold2)':visits>=2?'var(--blue)':'var(--text)'}">${visits}</td>
-      <td style="font-size:12px;color:var(--text2)">${esc(c.firstVisit||'—')}</td>
-      <td style="font-size:12px;color:var(--text2)">${esc(c.lastVisit||'—')}</td>
-      <td style="font-size:13px">${c.lastCast     ? `<span style="color:var(--pink);font-weight:500">${esc(c.lastCast)}</span>`     : '<span style="color:var(--text3)">—</span>'}</td>
-      <td style="font-size:13px">${c.favoriteCast ? `<span style="color:var(--gold2);font-weight:500">${esc(c.favoriteCast)}</span>` : '<span style="color:var(--text3)">—</span>'}</td>
-      <td><span style="font-size:12px;color:var(--text2)">${storeLabel[c.store]||c.store||'—'}</span></td>
+    const visits    = c.totalVisits || 0;
+    const store     = STORE_LABEL_C[c.store] || (c.store || '—');
+    const lastCast  = c.lastCast || '—';
+    return `<tr style="cursor:pointer;" onclick="openCustomerDetail(${c.id})">
       <td>
-        <button class="btn btn-red btn-sm" onclick="deleteCustomer(${c.id})">削除</button>
+        <div style="display:flex;align-items:center;gap:2px;flex-wrap:wrap;">
+          <span style="font-weight:600">${esc(c.name||'—')}</span>
+          ${custBadge(visits)}
+        </div>
       </td>
+      <td style="font-family:'DM Mono',monospace;font-size:12px;color:var(--text2);white-space:nowrap">${esc(c.phone)}</td>
+      <td class="num" style="font-weight:700;color:${visitColor(visits)}">${visits}</td>
+      <td style="font-size:12px;color:var(--text2);white-space:nowrap">${esc(c.lastVisit||'—')}</td>
+      <td style="font-size:12px;color:var(--text2)">${esc(store)}</td>
+      <td style="font-size:13px;color:var(--pink);font-weight:500">${esc(lastCast)}</td>
     </tr>`;
   }).join('');
 }
 
 function searchCustomers() {
-  loadCustomers($('cust-search').value.trim());
+  loadCustomers($('cust-search').value);
 }
 
 async function deleteCustomer(id) {
   if (!confirm('この顧客データを削除しますか？')) return;
   await api('DELETE', `/customers/${id}`);
+  closeOverlay('modal-customer-detail');
   toast('🗑️ 削除しました');
   loadCustomers();
+}
+
+// ── 顧客詳細モーダルを開く ──
+async function openCustomerDetail(id) {
+  $('cust-detail-title').textContent = '読み込み中…';
+  $('cust-detail-body').innerHTML    = '<div style="text-align:center;padding:40px;color:var(--text3)">読み込み中…</div>';
+  openOverlay('modal-customer-detail');
+
+  const c = await api('GET', `/customers/${id}`);
+  $('cust-detail-title').textContent = c.name ? `${esc(c.name)}` : '顧客詳細';
+
+  const visits    = c.totalVisits || 0;
+  const storeName = STORE_LABEL_C[c.store] || c.store || '—';
+
+  // ── キャスト履歴 ──
+  const hist = c.castHistory || [];
+  const maxCnt = hist.length > 0 ? hist[0].count : 1;
+  const castHistHtml = hist.length > 0
+    ? hist.map((h, i) => {
+        const pct   = Math.round(h.count / maxCnt * 100);
+        const isBest = i === 0;
+        return `<div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--line);">
+          <div style="min-width:90px;font-size:13px;font-weight:${isBest?700:400};
+            color:${isBest?'var(--gold2)':'var(--text)'}">
+            ${esc(h.cast)}${isBest?` <span style="font-size:10px;color:var(--gold);margin-left:3px;">★</span>`:''}
+          </div>
+          <div style="flex:1;background:var(--bg4);border-radius:4px;height:7px;overflow:hidden;">
+            <div style="width:${pct}%;height:100%;border-radius:4px;
+              background:${isBest?'var(--gold)':'var(--blue)'};
+              transition:width .5s ease;"></div>
+          </div>
+          <div style="font-size:12px;color:var(--text3);min-width:36px;text-align:right;
+            font-family:'DM Mono',monospace">${h.count}回</div>
+        </div>`;
+      }).join('')
+    : '<div style="color:var(--text3);font-size:13px;padding:8px 0">データなし</div>';
+
+  // ── オーダー履歴テーブル ──
+  const orders = c.orders || [];
+  const orderTableHtml = orders.length > 0 ? `
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>日付</th>
+            <th>店舗</th>
+            <th>キャスト</th>
+            <th class="num">総売</th>
+            <th>区分</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${orders.map(o => {
+            const sc = o.store === 'dino' ? 'var(--gold2)' : 'var(--pink)';
+            const type = o.isHonshimei
+              ? `<span class="tag-hon">本指名</span>`
+              : o.isNew ? `<span class="tag-new">新規</span>`
+              : `<span style="color:var(--text3);font-size:11px">その他</span>`;
+            return `<tr>
+              <td style="font-family:'DM Mono',monospace;font-size:12px;white-space:nowrap">${esc(o.date)}</td>
+              <td style="font-size:12px;color:${sc};font-weight:500">${esc(STORE_LABEL_C[o.store]||o.store||'—')}</td>
+              <td style="font-weight:500">${esc(o.castName||'—')}</td>
+              <td class="num">${fmt(o.sales)}</td>
+              <td>${type}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>`
+    : `<div style="text-align:center;padding:24px;color:var(--text3);">
+        <div style="font-size:24px;margin-bottom:8px">🧾</div>オーダー履歴なし
+       </div>`;
+
+  $('cust-detail-body').innerHTML = `
+    <!-- ヘッダー：名前＋電話番号 -->
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;
+      flex-wrap:wrap;gap:12px;padding-bottom:16px;border-bottom:1px solid var(--line);margin-bottom:16px;">
+      <div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+          <span style="font-size:22px;font-weight:700;">${esc(c.name||'名前未登録')}</span>
+          ${custBadge(visits)}
+        </div>
+        <div style="font-size:14px;font-family:'DM Mono',monospace;color:var(--text2)">📞 ${esc(c.phone)}</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:11px;color:var(--text3);margin-bottom:2px">よく使う店舗</div>
+        <div style="font-size:13px;font-weight:500">${esc(storeName)}</div>
+      </div>
+    </div>
+
+    <!-- KPIカード 2行 -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px;">
+      <div style="background:var(--bg3);border:1px solid var(--line);border-radius:var(--rlg);padding:12px;">
+        <div class="kpi-label">来店回数</div>
+        <div style="font-size:26px;font-weight:700;font-family:'Oswald',sans-serif;
+          color:${visitColor(visits)};line-height:1.1;margin-top:4px">${visits}<span style="font-size:14px;margin-left:2px">回</span></div>
+      </div>
+      <div style="background:var(--bg3);border:1px solid var(--line);border-radius:var(--rlg);padding:12px;">
+        <div class="kpi-label">初回来店</div>
+        <div style="font-size:13px;font-weight:500;margin-top:6px">${esc(c.firstVisit||'—')}</div>
+      </div>
+      <div style="background:var(--bg3);border:1px solid var(--line);border-radius:var(--rlg);padding:12px;">
+        <div class="kpi-label">最終来店</div>
+        <div style="font-size:13px;font-weight:500;margin-top:6px">${esc(c.lastVisit||'—')}</div>
+      </div>
+      <div style="background:var(--bg3);border:1px solid var(--line);border-radius:var(--rlg);padding:12px;">
+        <div class="kpi-label">最終キャスト</div>
+        <div style="font-size:14px;font-weight:600;color:var(--pink);margin-top:4px">${esc(c.lastCast||'—')}</div>
+      </div>
+      <div style="background:var(--bg3);border:1px solid var(--line);border-radius:var(--rlg);padding:12px;grid-column:span 2;">
+        <div class="kpi-label">よく呼ぶキャスト</div>
+        <div style="font-size:14px;font-weight:600;color:var(--gold2);margin-top:4px">${esc(c.favoriteCast||'—')}</div>
+      </div>
+    </div>
+
+    <!-- キャスト別履歴 -->
+    <div style="margin-bottom:18px;">
+      <div style="font-size:11px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;
+        color:var(--text3);margin-bottom:10px;">呼んだキャスト履歴</div>
+      ${castHistHtml}
+    </div>
+
+    <!-- オーダー履歴 -->
+    <div style="margin-bottom:8px;">
+      <div style="font-size:11px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;
+        color:var(--text3);margin-bottom:10px;">オーダー履歴（${orders.length}件）</div>
+      ${orderTableHtml}
+    </div>
+
+    <!-- アクション -->
+    <div style="display:flex;justify-content:flex-end;margin-top:16px;padding-top:14px;
+      border-top:1px solid var(--line);">
+      <button class="btn btn-red btn-sm" onclick="deleteCustomer(${c.id})">
+        🗑️ この顧客を削除
+      </button>
+    </div>
+  `;
 }
 
 // ─── 電話番号リアルタイム検索（オーダーモーダル内）──────
