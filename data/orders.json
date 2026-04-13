@@ -1,0 +1,32 @@
+[
+  {
+    "id": 1,
+    "createdAt": "2026-04-09T13:10:54.362Z",
+    "date": "2026-04-09",
+    "store": "dino",
+    "customerPhone": "08016921122",
+    "customerName": "小野",
+    "castName": "メアリ",
+    "sales": 15000,
+    "castPay": 8000,
+    "profit": 7000,
+    "isHonshimei": false,
+    "isNew": true,
+    "note": ""
+  },
+  {
+    "id": 2,
+    "createdAt": "2026-04-09T13:11:31.412Z",
+    "date": "2026-04-09",
+    "store": "dino",
+    "customerPhone": "08016921122",
+    "customerName": "小野",
+    "castName": "アミ",
+    "sales": 20000,
+    "castPay": 10000,
+    "profit": 10000,
+    "isHonshimei": false,
+    "isNew": true,
+    "note": ""
+  }
+]

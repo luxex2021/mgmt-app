@@ -1,0 +1,14 @@
+[
+  {
+    "id": 1,
+    "phone": "08016921122",
+    "name": "小野",
+    "store": "dino",
+    "firstVisit": "2026-04-09",
+    "lastVisit": "2026-04-09",
+    "totalVisits": 2,
+    "lastCast": "アミ",
+    "favoriteCast": "メアリ",
+    "createdAt": "2026-04-09T13:10:54.366Z"
+  }
+]

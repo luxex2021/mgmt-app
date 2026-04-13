@@ -1,0 +1,13 @@
+{
+  "name": "store-mgmt",
+  "version": "1.0.0",
+  "description": "店舗運営管理アプリ",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.18.2"
+  }
+}

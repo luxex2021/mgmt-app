@@ -1,0 +1,1623 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>店舗管理システム</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Oswald:wght@400;600&family=DM+Mono:wght@400;500&display=swap');
+:root{
+  --bg:#0a0a0c;--bg2:#111115;--bg3:#18181e;--bg4:#222229;--bg5:#2a2a33;
+  --line:rgba(255,255,255,.06);--line2:rgba(255,255,255,.11);
+  --text:#ededf0;--text2:#8888a0;--text3:#4a4a60;
+  --gold:#d4a843;--gold2:#f0c866;--gold-bg:rgba(212,168,67,.10);--gold-bd:rgba(212,168,67,.28);
+  --red:#e05555;--red-bg:rgba(224,85,85,.10);
+  --green:#3dc88a;--green-bg:rgba(61,200,138,.10);
+  --blue:#5b8fff;--blue-bg:rgba(91,143,255,.10);
+  --pink:#d45b8a;--pink-bg:rgba(212,91,138,.10);
+  --r:8px;--rlg:14px;--sidebar:220px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line-height:1.65;}
+.layout{display:flex;min-height:100vh;}
+.sidebar{width:var(--sidebar);background:var(--bg2);border-right:1px solid var(--line);display:flex;flex-direction:column;position:fixed;top:0;left:0;height:100vh;z-index:50;overflow-y:auto;transition:transform .25s;}
+.logo{padding:22px 18px 16px;border-bottom:1px solid var(--line);}
+.logo-badge{display:inline-flex;align-items:center;gap:6px;background:var(--gold-bg);border:1px solid var(--gold-bd);border-radius:6px;padding:5px 10px;margin-bottom:8px;}
+.logo-badge span{font-family:'Oswald',sans-serif;font-size:13px;color:var(--gold2);letter-spacing:.06em;}
+.logo h1{font-size:15px;font-weight:700;letter-spacing:-.01em;}
+.logo p{font-size:11px;color:var(--text3);margin-top:2px;}
+nav{padding:10px 8px;flex:1;}
+.nav-section{font-size:10px;letter-spacing:.1em;color:var(--text3);text-transform:uppercase;padding:14px 10px 6px;}
+.nav-item{display:flex;align-items:center;gap:9px;padding:9px 12px;border-radius:8px;cursor:pointer;color:var(--text2);font-size:13px;transition:all .15s;border:1px solid transparent;margin-bottom:1px;user-select:none;}
+.nav-item:hover{background:var(--bg3);color:var(--text);}
+.nav-item.active{background:var(--gold-bg);color:var(--gold2);border-color:var(--gold-bd);font-weight:500;}
+.nav-icon{font-size:15px;width:17px;text-align:center;}
+.main{margin-left:var(--sidebar);flex:1;padding:28px 32px;min-height:100vh;}
+.ph{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px;}
+.ph-left h2{font-size:20px;font-weight:700;letter-spacing:-.02em;}
+.ph-left p{font-size:12px;color:var(--text3);margin-top:3px;}
+.page{display:none;} .page.active{display:block;}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:12px;margin-bottom:22px;}
+.kpi{background:var(--bg2);border:1px solid var(--line);border-radius:var(--rlg);padding:16px 18px;transition:border-color .2s;}
+.kpi:hover{border-color:var(--line2);}
+.kpi-label{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);margin-bottom:7px;}
+.kpi-value{font-size:24px;font-weight:700;font-family:'Oswald',sans-serif;letter-spacing:-.01em;}
+.kpi-sub{font-size:11px;color:var(--text3);margin-top:3px;}
+.kpi-gold .kpi-value{color:var(--gold2);} .kpi-green .kpi-value{color:var(--green);}
+.kpi-blue .kpi-value{color:var(--blue);}  .kpi-pink .kpi-value{color:var(--pink);}
+.card{background:var(--bg2);border:1px solid var(--line);border-radius:var(--rlg);padding:20px;margin-bottom:18px;}
+.card-title{font-size:11px;font-weight:500;letter-spacing:.09em;text-transform:uppercase;color:var(--text3);margin-bottom:14px;}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+.tbl-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;}
+thead th{font-size:11px;font-weight:500;letter-spacing:.07em;text-transform:uppercase;color:var(--text3);padding:9px 12px;border-bottom:1px solid var(--line);white-space:nowrap;text-align:left;}
+tbody td{padding:11px 12px;font-size:13px;border-bottom:1px solid var(--line);vertical-align:middle;}
+tbody tr:last-child td{border-bottom:none;}
+tbody tr:hover td{background:var(--bg3);}
+td.num{font-family:'DM Mono',monospace;font-size:12px;text-align:right;}
+th.num{text-align:right;}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.fg{display:flex;flex-direction:column;gap:5px;}
+.fg.full{grid-column:1/-1;}
+label{font-size:11px;font-weight:500;color:var(--text2);letter-spacing:.04em;}
+.req{color:var(--gold);margin-left:3px;}
+input[type=text],input[type=date],input[type=number],input[type=month],textarea,select{
+  background:var(--bg3);border:1px solid var(--line2);border-radius:var(--r);
+  color:var(--text);font-family:inherit;font-size:13px;padding:9px 12px;
+  width:100%;outline:none;transition:border-color .2s;
+}
+input:focus,textarea:focus,select:focus{border-color:var(--gold);}
+textarea{resize:vertical;min-height:72px;}
+.form-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:14px;}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:var(--r);font-size:13px;font-weight:500;font-family:inherit;cursor:pointer;border:1px solid transparent;transition:all .15s;}
+.btn-gold{background:var(--gold);color:#111;border-color:var(--gold);}
+.btn-gold:hover{background:var(--gold2);}
+.btn-ghost{background:transparent;color:var(--text2);border-color:var(--line2);}
+.btn-ghost:hover{background:var(--bg3);color:var(--text);}
+.btn-red{background:var(--red-bg);color:var(--red);border-color:rgba(224,85,85,.25);}
+.btn-red:hover{background:rgba(224,85,85,.18);}
+.btn-sm{padding:5px 11px;font-size:12px;}
+.badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:500;}
+.badge-gold{background:var(--gold-bg);color:var(--gold2);}
+.badge-green{background:var(--green-bg);color:var(--green);}
+.badge-red{background:var(--red-bg);color:var(--red);}
+.badge-blue{background:var(--blue-bg);color:var(--blue);}
+.badge-pink{background:var(--pink-bg);color:var(--pink);}
+.badge-gray{background:var(--bg4);color:var(--text2);}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center;z-index:200;opacity:0;pointer-events:none;transition:opacity .2s;backdrop-filter:blur(3px);}
+.overlay.show{opacity:1;pointer-events:all;}
+.modal{background:var(--bg2);border:1px solid var(--line2);border-radius:var(--rlg);padding:26px;width:92%;max-width:700px;max-height:92vh;overflow-y:auto;transform:translateY(14px);transition:transform .2s;}
+.overlay.show .modal{transform:translateY(0);}
+.modal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;}
+.modal-title{font-size:16px;font-weight:600;}
+.modal-close{width:28px;height:28px;border-radius:7px;border:1px solid var(--line2);background:transparent;color:var(--text2);cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;transition:all .15s;}
+.modal-close:hover{background:var(--bg4);color:var(--text);}
+.toasts{position:fixed;bottom:22px;right:22px;display:flex;flex-direction:column;gap:7px;z-index:300;}
+.toast{background:var(--bg4);border:1px solid var(--line2);border-radius:var(--r);padding:11px 16px;font-size:13px;animation:slideUp .2s ease;min-width:200px;}
+.toast.ok{border-left:3px solid var(--green);}
+.toast.err{border-left:3px solid var(--red);}
+@keyframes slideUp{from{transform:translateY(8px);opacity:0}to{transform:translateY(0);opacity:1}}
+.shift-cell{padding:5px 4px;font-size:11px;border-radius:5px;text-align:center;cursor:pointer;border:1px solid transparent;user-select:none;transition:all .12s;}
+.shift-cell:hover{border-color:var(--line2);}
+.shift-cell.work{background:var(--green-bg);color:var(--green);}
+.shift-cell.absence{background:var(--red-bg);color:var(--red);}
+.shift-cell.period{background:var(--pink-bg);color:var(--pink);}
+.shift-cell.travel{background:var(--blue-bg);color:var(--blue);}
+.progress-wrap{background:var(--bg4);border-radius:6px;height:8px;overflow:hidden;margin-top:5px;}
+.progress-bar{height:100%;border-radius:6px;transition:width .5s;}
+.divider{height:1px;background:var(--line);margin:18px 0;}
+.empty{text-align:center;padding:50px 20px;color:var(--text3);}
+.empty-icon{font-size:32px;margin-bottom:10px;}
+.filter-bar{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin-bottom:16px;}
+.filter-bar .fg{min-width:130px;}
+.month-nav{display:flex;align-items:center;gap:10px;}
+.month-nav input{width:140px;}
+.hamburger{display:none;position:fixed;top:14px;left:14px;z-index:60;width:38px;height:38px;border-radius:9px;background:var(--bg2);border:1px solid var(--line2);align-items:center;justify-content:center;cursor:pointer;flex-direction:column;gap:5px;}
+.hamburger span{display:block;width:18px;height:2px;background:var(--text2);border-radius:2px;}
+/* ── 店舗入力セクション ── */
+.store-section{border:1px solid var(--line2);border-radius:var(--rlg);padding:18px;margin-bottom:16px;}
+.store-section-head{display:flex;align-items:center;gap:8px;margin-bottom:14px;}
+.store-section-head .store-name{font-size:15px;font-weight:700;}
+/* TEL時間帯グリッド */
+.tel-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+/* ── オーダー集計バナー ── */
+.summary-banner{
+  background:var(--bg3);border:1px solid var(--line2);
+  border-radius:var(--rlg);padding:14px 18px;margin-bottom:14px;
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;
+}
+.summary-banner-kpis{display:flex;gap:18px;flex-wrap:wrap;}
+.sb-kpi{display:flex;flex-direction:column;align-items:flex-start;}
+.sb-kpi-label{font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:var(--text3);margin-bottom:2px;}
+.sb-kpi-value{font-size:16px;font-weight:700;font-family:'Oswald',sans-serif;}
+/* ── オーダー 本指名/新規 タグ ── */
+.tag-hon{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:500;background:var(--gold-bg);color:var(--gold2);margin-left:4px;}
+.tag-new{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:500;background:var(--green-bg);color:var(--green);margin-left:4px;}
+/* ── 自動集計ボタン強調 ── */
+.btn-autofill{background:var(--blue-bg);color:var(--blue);border-color:rgba(91,143,255,.3);}
+.btn-autofill:hover{background:rgba(91,143,255,.18);}
+/* ── オーダーページ リアルタイムカードグリッド ── */
+#order-realtime-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:20px;}
+@media(max-width:820px){
+  .sidebar{transform:translateX(-100%);}
+  .sidebar.open{transform:translateX(0);}
+  .main{margin-left:0;padding:18px 16px;}
+  .hamburger{display:flex;}
+  .two-col{grid-template-columns:1fr;}
+  .form-grid{grid-template-columns:1fr;}
+  .fg.full{grid-column:1;}
+  .kpi-grid{grid-template-columns:repeat(2,1fr);}
+  .ph{margin-top:42px;}
+  .tel-grid{grid-template-columns:repeat(2,1fr);}
+  #order-realtime-grid{grid-template-columns:1fr;}
+}
+@media(max-width:480px){
+  .kpi-grid{grid-template-columns:1fr 1fr;}
+  .kpi-value{font-size:20px;}
+}
+</style>
+</head>
+<body>
+<div class="hamburger" id="hamburger" onclick="toggleSidebar()">
+  <span></span><span></span><span></span>
+</div>
+<div class="layout">
+
+<!-- ════ SIDEBAR ════ -->
+<aside class="sidebar" id="sidebar">
+  <div class="logo">
+    <div class="logo-badge"><span>★ STORE MGT</span></div>
+    <h1>店舗管理システム</h1>
+    <p id="today-label"></p>
+  </div>
+  <nav>
+    <div class="nav-section">レポート</div>
+    <div class="nav-item active" id="nav-dashboard" onclick="go('dashboard')"><span class="nav-icon">📊</span> ダッシュボード</div>
+    <div class="nav-item" id="nav-order" onclick="go('order')"><span class="nav-icon">🧾</span> オーダー入力</div>
+    <div class="nav-item" id="nav-customer" onclick="go('customer')"><span class="nav-icon">👥</span> 顧客管理</div>
+    <div class="nav-item" id="nav-report" onclick="go('report')"><span class="nav-icon">📝</span> 終業報告</div>
+    <div class="nav-section">キャスト</div>
+    <div class="nav-item" id="nav-cast" onclick="go('cast')"><span class="nav-icon">👤</span> キャスト台帳</div>
+    <div class="nav-item" id="nav-shift" onclick="go('shift')"><span class="nav-icon">📅</span> 出勤管理</div>
+    <div class="nav-section">集客・目標</div>
+    <div class="nav-item" id="nav-traffic" onclick="go('traffic')"><span class="nav-icon">📈</span> 集客データ</div>
+    <div class="nav-item" id="nav-goal" onclick="go('goal')"><span class="nav-icon">🎯</span> 月間目標</div>
+  </nav>
+</aside>
+
+<!-- ════ MAIN ════ -->
+<main class="main">
+
+<!-- ══ ダッシュボード ══════════════════════════════════════ -->
+<div class="page active" id="page-dashboard">
+  <div class="ph">
+    <div class="ph-left"><h2>ダッシュボード</h2><p id="dash-month-label"></p></div>
+    <div class="month-nav"><input type="month" id="dash-month" onchange="loadDashboard()"></div>
+  </div>
+  <!-- ディーノ石巻 -->
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+    <div style="width:4px;height:22px;background:var(--gold);border-radius:2px;"></div>
+    <span style="font-size:15px;font-weight:700;">ディーノ石巻</span>
+    <span class="badge badge-gold">DINO</span>
+  </div>
+  <div class="kpi-grid" id="kpi-dino"></div>
+
+  <!-- 愛して人妻 -->
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;margin-top:8px;">
+    <div style="width:4px;height:22px;background:var(--pink);border-radius:2px;"></div>
+    <span style="font-size:15px;font-weight:700;">愛して人妻</span>
+    <span class="badge badge-pink">AI</span>
+  </div>
+  <div class="kpi-grid" id="kpi-ai"></div>
+
+  <!-- 合計 -->
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;margin-top:8px;">
+    <div style="width:4px;height:22px;background:var(--green);border-radius:2px;"></div>
+    <span style="font-size:15px;font-weight:700;">2店舗合計</span>
+    <span class="badge badge-green">TOTAL</span>
+  </div>
+  <div class="kpi-grid" id="kpi-total"></div>
+
+  <!-- 日別推移 -->
+  <div class="card" style="margin-top:8px;">
+    <div class="card-title">日別推移</div>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>日付</th>
+            <th class="num" style="color:var(--gold2)">ディーノ 売上</th>
+            <th class="num" style="color:var(--gold2)">本数</th>
+            <th class="num" style="color:var(--gold2)">稼働</th>
+            <th class="num" style="color:var(--pink)">愛して 売上</th>
+            <th class="num" style="color:var(--pink)">本数</th>
+            <th class="num" style="color:var(--pink)">稼働</th>
+            <th class="num" style="color:var(--green)">合計売上</th>
+          </tr>
+        </thead>
+        <tbody id="daily-body"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ══ オーダー入力 ════════════════════════════════════════ -->
+<div class="page" id="page-order">
+  <div class="ph">
+    <div class="ph-left"><h2>オーダー入力</h2><p>接客1件ごとに都度入力・リアルタイム集計</p></div>
+    <button class="btn btn-gold" onclick="openOrderModal()">＋ 新規オーダー</button>
+  </div>
+
+  <!-- リアルタイム集計カード（常時表示） -->
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:20px;" id="order-realtime-grid">
+    <!-- ディーノ石巻 -->
+    <div class="card" style="margin-bottom:0;border-color:rgba(212,168,67,.3);">
+      <div style="display:flex;align-items:center;gap:7px;margin-bottom:12px;">
+        <div style="width:3px;height:16px;background:var(--gold);border-radius:2px;"></div>
+        <span style="font-size:12px;font-weight:700;color:var(--gold2);">ディーノ石巻</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <div><div class="kpi-label">総売</div><div class="kpi-value" id="rt-dino-sales" style="font-size:18px;color:var(--gold2)">0</div><div class="kpi-sub">円</div></div>
+        <div><div class="kpi-label">給料</div><div class="kpi-value" id="rt-dino-castpay" style="font-size:18px;color:var(--text2)">0</div><div class="kpi-sub">円</div></div>
+        <div><div class="kpi-label">粗利</div><div class="kpi-value" id="rt-dino-profit" style="font-size:18px;color:var(--green)">0</div><div class="kpi-sub">円</div></div>
+        <div><div class="kpi-label">本数</div><div class="kpi-value" id="rt-dino-count" style="font-size:18px;color:var(--blue)">0</div><div class="kpi-sub">本</div></div>
+        <div><div class="kpi-label">本指名</div><div class="kpi-value" id="rt-dino-hon" style="font-size:18px;color:var(--pink)">0</div><div class="kpi-sub">本</div></div>
+      </div>
+    </div>
+    <!-- 愛して人妻 -->
+    <div class="card" style="margin-bottom:0;border-color:rgba(212,91,138,.3);">
+      <div style="display:flex;align-items:center;gap:7px;margin-bottom:12px;">
+        <div style="width:3px;height:16px;background:var(--pink);border-radius:2px;"></div>
+        <span style="font-size:12px;font-weight:700;color:var(--pink);">愛して人妻</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <div><div class="kpi-label">総売</div><div class="kpi-value" id="rt-ai-sales" style="font-size:18px;color:var(--gold2)">0</div><div class="kpi-sub">円</div></div>
+        <div><div class="kpi-label">給料</div><div class="kpi-value" id="rt-ai-castpay" style="font-size:18px;color:var(--text2)">0</div><div class="kpi-sub">円</div></div>
+        <div><div class="kpi-label">粗利</div><div class="kpi-value" id="rt-ai-profit" style="font-size:18px;color:var(--green)">0</div><div class="kpi-sub">円</div></div>
+        <div><div class="kpi-label">本数</div><div class="kpi-value" id="rt-ai-count" style="font-size:18px;color:var(--blue)">0</div><div class="kpi-sub">本</div></div>
+        <div><div class="kpi-label">本指名</div><div class="kpi-value" id="rt-ai-hon" style="font-size:18px;color:var(--pink)">0</div><div class="kpi-sub">本</div></div>
+      </div>
+    </div>
+    <!-- 2店舗合計 -->
+    <div class="card" style="margin-bottom:0;border-color:rgba(61,200,138,.3);">
+      <div style="display:flex;align-items:center;gap:7px;margin-bottom:12px;">
+        <div style="width:3px;height:16px;background:var(--green);border-radius:2px;"></div>
+        <span style="font-size:12px;font-weight:700;color:var(--green);">2店舗合計</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <div><div class="kpi-label">総売</div><div class="kpi-value" id="rt-total-sales" style="font-size:18px;color:var(--gold2)">0</div><div class="kpi-sub">円</div></div>
+        <div><div class="kpi-label">給料</div><div class="kpi-value" id="rt-total-castpay" style="font-size:18px;color:var(--text2)">0</div><div class="kpi-sub">円</div></div>
+        <div><div class="kpi-label">粗利</div><div class="kpi-value" id="rt-total-profit" style="font-size:18px;color:var(--green)">0</div><div class="kpi-sub">円</div></div>
+        <div><div class="kpi-label">本数</div><div class="kpi-value" id="rt-total-count" style="font-size:18px;color:var(--blue)">0</div><div class="kpi-sub">本</div></div>
+        <div><div class="kpi-label">本指名</div><div class="kpi-value" id="rt-total-hon" style="font-size:18px;color:var(--pink)">0</div><div class="kpi-sub">本</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- フィルター -->
+  <div class="filter-bar">
+    <div class="fg"><label>日付</label><input type="date" id="of-date" oninput="loadOrders()"></div>
+    <div class="fg"><label>月で絞り込み</label><input type="month" id="of-month" oninput="loadOrders()"></div>
+    <div class="fg"><label>店舗</label>
+      <select id="of-store" onchange="loadOrders()">
+        <option value="">全店舗</option>
+        <option value="dino">ディーノ石巻</option>
+        <option value="ai">愛して人妻</option>
+      </select>
+    </div>
+    <button class="btn btn-ghost btn-sm" onclick="clearOF()" style="align-self:flex-end">クリア</button>
+  </div>
+
+  <!-- 一覧 -->
+  <div class="card" style="padding:0;overflow:hidden;">
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>日付</th><th>店舗</th><th>キャスト</th>
+            <th class="num">総売</th><th class="num">給料</th><th class="num">粗利</th>
+            <th>区分</th><th>備考</th><th>操作</th>
+          </tr>
+        </thead>
+        <tbody id="order-body"></tbody>
+      </table>
+    </div>
+    <div class="empty" id="order-empty" style="display:none">
+      <div class="empty-icon">🧾</div><div>オーダーがありません</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 顧客管理 ═════════════════════════════════════════════ -->
+<div class="page" id="page-customer">
+  <div class="ph">
+    <div class="ph-left"><h2>顧客管理</h2><p>来店履歴・常連管理</p></div>
+  </div>
+
+  <!-- 検索バー -->
+  <div class="filter-bar">
+    <div class="fg" style="flex:1;max-width:280px;">
+      <label>電話番号で検索</label>
+      <input type="text" id="cust-search" placeholder="電話番号（一部でも可）" oninput="searchCustomers()">
+    </div>
+    <button class="btn btn-ghost btn-sm" onclick="$('cust-search').value='';loadCustomers()" style="align-self:flex-end">クリア</button>
+  </div>
+
+  <!-- 統計バナー -->
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:18px;" id="cust-stats-grid">
+    <div class="card" style="margin-bottom:0;">
+      <div class="kpi-label">総顧客数</div>
+      <div class="kpi-value kpi-gold" id="cust-total" style="font-size:24px;color:var(--gold2)">—</div>
+    </div>
+    <div class="card" style="margin-bottom:0;">
+      <div class="kpi-label">今月来店</div>
+      <div class="kpi-value" id="cust-this-month" style="font-size:24px;color:var(--green)">—</div>
+    </div>
+    <div class="card" style="margin-bottom:0;">
+      <div class="kpi-label">リピーター</div>
+      <div class="kpi-value" id="cust-repeater" style="font-size:24px;color:var(--blue)">—</div>
+      <div class="kpi-sub">2回以上来店</div>
+    </div>
+  </div>
+
+  <!-- 一覧テーブル -->
+  <div class="card" style="padding:0;overflow:hidden;">
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>顧客名</th><th>電話番号</th>
+            <th class="num">来店回数</th>
+            <th>初来店</th><th>最終来店</th>
+            <th>最終キャスト</th><th>よく呼ぶキャスト</th>
+            <th>よく使う店舗</th><th>操作</th>
+          </tr>
+        </thead>
+        <tbody id="customer-body"></tbody>
+      </table>
+    </div>
+    <div class="empty" id="customer-empty" style="display:none">
+      <div class="empty-icon">👥</div>
+      <div>顧客データがありません。オーダー入力で電話番号を入力すると自動登録されます。</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 終業報告 ════════════════════════════════════════════ -->
+<div class="page" id="page-report">
+  <div class="ph">
+    <div class="ph-left"><h2>終業報告</h2><p>1日1回・2店舗まとめて入力</p></div>
+    <button class="btn btn-gold" onclick="openReportModal()">＋ 新規入力</button>
+  </div>
+  <div class="filter-bar">
+    <div class="fg"><label>月で絞り込み</label><input type="month" id="rf-month" oninput="loadReports()"></div>
+    <div class="fg"><label>担当者</label><input type="text" id="rf-staff" placeholder="氏名" oninput="loadReports()"></div>
+    <button class="btn btn-ghost btn-sm" onclick="clearRF()" style="align-self:flex-end">クリア</button>
+  </div>
+  <div class="card" style="padding:0;overflow:hidden;">
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>日付</th><th>担当</th>
+            <th class="num" style="color:var(--gold2)">ディーノ 売上</th>
+            <th class="num" style="color:var(--gold2)">本数</th>
+            <th class="num" style="color:var(--gold2)">稼働(実)</th>
+            <th class="num" style="color:var(--pink)">愛して 売上</th>
+            <th class="num" style="color:var(--pink)">本数</th>
+            <th class="num" style="color:var(--pink)">稼働(実)</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody id="report-body"></tbody>
+      </table>
+    </div>
+    <div class="empty" id="report-empty" style="display:none"><div class="empty-icon">📋</div><div>報告がありません</div></div>
+  </div>
+</div>
+
+<!-- ══ キャスト台帳 ════════════════════════════════════════ -->
+<div class="page" id="page-cast">
+  <div class="ph">
+    <div class="ph-left"><h2>キャスト台帳</h2><p>在籍キャスト管理</p></div>
+    <button class="btn btn-gold" onclick="openCastModal()">＋ 追加</button>
+  </div>
+  <div class="card" style="padding:0;overflow:hidden;">
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>名前</th><th>ステータス</th><th>生理予定</th><th>メモ</th><th>操作</th></tr></thead>
+        <tbody id="cast-body"></tbody>
+      </table>
+    </div>
+    <div class="empty" id="cast-empty" style="display:none"><div class="empty-icon">👤</div><div>キャストを追加してください</div></div>
+  </div>
+</div>
+
+<!-- ══ 出勤管理 ════════════════════════════════════════════ -->
+<div class="page" id="page-shift">
+  <div class="ph">
+    <div class="ph-left"><h2>出勤管理</h2><p>月別シフト・出欠管理</p></div>
+    <div class="month-nav"><input type="month" id="shift-month" onchange="loadShift()"></div>
+  </div>
+  <div style="margin-bottom:12px;display:flex;gap:8px;flex-wrap:wrap;">
+    <span class="badge badge-green">■ 出勤</span>
+    <span class="badge badge-red">■ 当欠</span>
+    <span class="badge badge-pink">■ 生理</span>
+    <span class="badge badge-blue">■ 出稼ぎ</span>
+    <span class="badge badge-gray">■ 休み</span>
+  </div>
+  <div class="card" style="padding:12px;overflow-x:auto;"><div id="shift-table-wrap"></div></div>
+</div>
+
+<!-- ══ 集客データ ══════════════════════════════════════════ -->
+<div class="page" id="page-traffic">
+  <div class="ph">
+    <div class="ph-left"><h2>集客データ</h2><p>ブログ・口コミ・アクセス</p></div>
+    <button class="btn btn-gold" onclick="openTrafficModal()">＋ 入力</button>
+  </div>
+  <div class="filter-bar">
+    <div class="fg"><label>月で絞り込み</label><input type="month" id="tf-month" oninput="loadTraffic()"></div>
+  </div>
+  <div class="card" style="padding:0;overflow:hidden;">
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>日付</th><th class="num">ブログ</th><th class="num">口コミ</th><th class="num">アクセス</th><th>メモ</th><th>操作</th></tr></thead>
+        <tbody id="traffic-body"></tbody>
+      </table>
+    </div>
+    <div class="empty" id="traffic-empty" style="display:none"><div class="empty-icon">📈</div><div>データがありません</div></div>
+  </div>
+</div>
+
+<!-- ══ 月間目標 ════════════════════════════════════════════ -->
+<div class="page" id="page-goal">
+  <div class="ph">
+    <div class="ph-left"><h2>月間目標設定</h2><p>目標値の入力と進捗確認</p></div>
+    <div class="month-nav"><input type="month" id="goal-month" onchange="loadGoal()"></div>
+  </div>
+  <div class="two-col">
+    <div class="card">
+      <div class="card-title">目標入力（2店舗合計）</div>
+      <div class="form-grid">
+        <div class="fg"><label>売上目標（円）</label><input type="number" id="g-sales" placeholder="0"></div>
+        <div class="fg"><label>粗利目標（円）</label><input type="number" id="g-profit" placeholder="0"></div>
+        <div class="fg"><label>本数目標</label><input type="number" id="g-count" placeholder="0"></div>
+        <div class="fg"><label>本指名目標</label><input type="number" id="g-hon" placeholder="0"></div>
+        <div class="fg"><label>TEL目標</label><input type="number" id="g-tel" placeholder="0"></div>
+        <div class="fg"><label>稼働目標</label><input type="number" id="g-kadou" placeholder="0"></div>
+      </div>
+      <div class="form-actions"><button class="btn btn-gold" onclick="saveGoal()">💾 保存</button></div>
+    </div>
+    <div class="card">
+      <div class="card-title">実績との比較</div>
+      <div id="goal-detail"></div>
+    </div>
+  </div>
+</div>
+
+</main>
+</div><!-- /layout -->
+
+<!-- ════ MODALS ════ -->
+
+<!-- 終業報告 モーダル（2店舗一括） -->
+<div class="overlay" id="modal-report" onclick="closeOverlay('modal-report')">
+<div class="modal" onclick="event.stopPropagation()" style="max-width:760px;">
+  <div class="modal-head">
+    <div class="modal-title" id="modal-report-title">終業報告 入力</div>
+    <button class="modal-close" onclick="closeOverlay('modal-report')">✕</button>
+  </div>
+  <form onsubmit="submitReport(event)">
+    <input type="hidden" id="r-id">
+    <div class="form-grid" style="margin-bottom:16px;">
+      <div class="fg"><label>日付<span class="req">*</span></label><input type="date" id="r-date" required></div>
+      <div class="fg"><label>担当者<span class="req">*</span></label><input type="text" id="r-staff" required placeholder="氏名"></div>
+    </div>
+
+    <!-- オーダー自動集計インジケーター -->
+    <div id="report-order-banner" style="display:none;background:var(--bg3);border:1px solid rgba(91,143,255,.3);border-radius:var(--rlg);padding:12px 16px;margin-bottom:14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+      <span style="font-size:18px;">📊</span>
+      <div style="flex:1;">
+        <div style="font-size:12px;font-weight:600;color:var(--blue);margin-bottom:2px;">オーダーから自動反映済み</div>
+        <div id="report-order-info" style="font-size:12px;color:var(--text2);"></div>
+      </div>
+      <button type="button" class="btn btn-ghost btn-sm" onclick="reapplyOrderSummary()" title="オーダー集計を再反映">🔄 再反映</button>
+    </div>
+
+    <!-- ディーノ石巻 -->
+    <div class="store-section">
+      <div class="store-section-head">
+        <div style="width:3px;height:18px;background:var(--gold);border-radius:2px;"></div>
+        <span class="store-name" style="color:var(--gold2);">ディーノ石巻</span>
+        <span id="dino-order-badge" style="display:none;" class="badge badge-blue" style="font-size:11px;margin-left:4px;"></span>
+      </div>
+      <div class="form-grid">
+        <div class="fg"><label>売上（円）</label><input type="number" id="d-sales" placeholder="0" min="0"></div>
+        <div class="fg"><label>粗利（円）</label><input type="number" id="d-profit" placeholder="0" min="0"></div>
+        <div class="fg"><label>本数</label><input type="number" id="d-count" placeholder="0" min="0"></div>
+        <div class="fg"><label>本指名</label><input type="number" id="d-hon" placeholder="0" min="0"></div>
+        <div class="fg"><label>稼働人数</label><input type="number" id="d-kadou" placeholder="0" min="0"></div>
+        <div class="fg"><label>TEL総件数</label><input type="number" id="d-tel" placeholder="0" min="0"></div>
+        <div class="fg full">
+          <label>TEL件数（時間帯別）</label>
+          <div class="tel-grid">
+            <div class="fg"><label>9〜12時</label><input type="number" id="d-t1" placeholder="0" min="0"></div>
+            <div class="fg"><label>12〜15時</label><input type="number" id="d-t2" placeholder="0" min="0"></div>
+            <div class="fg"><label>15〜18時</label><input type="number" id="d-t3" placeholder="0" min="0"></div>
+            <div class="fg"><label>18〜21時</label><input type="number" id="d-t4" placeholder="0" min="0"></div>
+            <div class="fg"><label>21〜24時</label><input type="number" id="d-t5" placeholder="0" min="0"></div>
+            <div class="fg"><label>24〜27時</label><input type="number" id="d-t6" placeholder="0" min="0"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 愛して人妻 -->
+    <div class="store-section">
+      <div class="store-section-head">
+        <div style="width:3px;height:18px;background:var(--pink);border-radius:2px;"></div>
+        <span class="store-name" style="color:var(--pink);">愛して人妻</span>
+        <span id="ai-order-badge" style="display:none;" class="badge badge-blue" style="font-size:11px;margin-left:4px;"></span>
+      </div>
+      <div class="form-grid">
+        <div class="fg"><label>売上（円）</label><input type="number" id="a-sales" placeholder="0" min="0"></div>
+        <div class="fg"><label>粗利（円）</label><input type="number" id="a-profit" placeholder="0" min="0"></div>
+        <div class="fg"><label>本数</label><input type="number" id="a-count" placeholder="0" min="0"></div>
+        <div class="fg"><label>本指名</label><input type="number" id="a-hon" placeholder="0" min="0"></div>
+        <div class="fg"><label>稼働人数</label><input type="number" id="a-kadou" placeholder="0" min="0"></div>
+        <div class="fg"><label>TEL総件数</label><input type="number" id="a-tel" placeholder="0" min="0"></div>
+        <div class="fg full">
+          <label>TEL件数（時間帯別）</label>
+          <div class="tel-grid">
+            <div class="fg"><label>9〜12時</label><input type="number" id="a-t1" placeholder="0" min="0"></div>
+            <div class="fg"><label>12〜15時</label><input type="number" id="a-t2" placeholder="0" min="0"></div>
+            <div class="fg"><label>15〜18時</label><input type="number" id="a-t3" placeholder="0" min="0"></div>
+            <div class="fg"><label>18〜21時</label><input type="number" id="a-t4" placeholder="0" min="0"></div>
+            <div class="fg"><label>21〜24時</label><input type="number" id="a-t5" placeholder="0" min="0"></div>
+            <div class="fg"><label>24〜27時</label><input type="number" id="a-t6" placeholder="0" min="0"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 引き継ぎ・メモ -->
+    <div class="store-section" style="border-color:var(--line);">
+      <div class="store-section-head">
+        <div style="width:3px;height:18px;background:var(--text3);border-radius:2px;"></div>
+        <span class="store-name" style="color:var(--text2);">引き継ぎ・コメント</span>
+      </div>
+      <div class="form-grid">
+        <div class="fg full"><label>ミス・抜け</label><textarea id="r-miss" placeholder="なければ空欄"></textarea></div>
+        <div class="fg full"><label>改善行動</label><textarea id="r-improve" placeholder="翌日から取り組む改善策"></textarea></div>
+        <div class="fg full"><label>引き継ぎ</label><textarea id="r-handover" placeholder="次の担当者への引き継ぎ"></textarea></div>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button type="button" class="btn btn-ghost" onclick="closeOverlay('modal-report')">キャンセル</button>
+      <button type="submit" class="btn btn-gold">📤 送信</button>
+    </div>
+  </form>
+</div>
+</div>
+
+<!-- キャスト台帳モーダル -->
+<div class="overlay" id="modal-cast" onclick="closeOverlay('modal-cast')">
+<div class="modal" onclick="event.stopPropagation()">
+  <div class="modal-head">
+    <div class="modal-title" id="modal-cast-title">キャスト 追加</div>
+    <button class="modal-close" onclick="closeOverlay('modal-cast')">✕</button>
+  </div>
+  <form onsubmit="submitCast(event)">
+    <input type="hidden" id="c-id">
+    <div class="form-grid">
+      <div class="fg"><label>源氏名<span class="req">*</span></label><input type="text" id="c-name" required></div>
+      <div class="fg"><label>ステータス</label>
+        <select id="c-status">
+          <option value="active">在籍</option>
+          <option value="rest">休業</option>
+          <option value="retired">退店</option>
+        </select>
+      </div>
+      <div class="fg"><label>生理予定日</label><input type="text" id="c-period" placeholder="例: 15日頃"></div>
+      <div class="fg"><label>出稼ぎ情報</label><input type="text" id="c-travel" placeholder="なければ空欄"></div>
+      <div class="fg full"><label>メモ</label><textarea id="c-note"></textarea></div>
+    </div>
+    <div class="form-actions">
+      <button type="button" class="btn btn-ghost" onclick="closeOverlay('modal-cast')">キャンセル</button>
+      <button type="submit" class="btn btn-gold">💾 保存</button>
+    </div>
+  </form>
+</div>
+</div>
+
+<!-- 集客データモーダル -->
+<div class="overlay" id="modal-traffic" onclick="closeOverlay('modal-traffic')">
+<div class="modal" onclick="event.stopPropagation()">
+  <div class="modal-head">
+    <div class="modal-title">集客データ 入力</div>
+    <button class="modal-close" onclick="closeOverlay('modal-traffic')">✕</button>
+  </div>
+  <form onsubmit="submitTraffic(event)">
+    <div class="form-grid">
+      <div class="fg"><label>日付<span class="req">*</span></label><input type="date" id="t-date" required></div>
+      <div class="fg"><label>ブログ投稿数</label><input type="number" id="t-blog" placeholder="0"></div>
+      <div class="fg"><label>口コミ数</label><input type="number" id="t-review" placeholder="0"></div>
+      <div class="fg"><label>アクセス数</label><input type="number" id="t-access" placeholder="0"></div>
+      <div class="fg full"><label>メモ</label><textarea id="t-note"></textarea></div>
+    </div>
+    <div class="form-actions">
+      <button type="button" class="btn btn-ghost" onclick="closeOverlay('modal-traffic')">キャンセル</button>
+      <button type="submit" class="btn btn-gold">💾 保存</button>
+    </div>
+  </form>
+</div>
+</div>
+
+<!-- オーダー入力モーダル -->
+<div class="overlay" id="modal-order" onclick="closeOverlay('modal-order')">
+<div class="modal" onclick="event.stopPropagation()">
+  <div class="modal-head">
+    <div class="modal-title" id="modal-order-title">オーダー入力</div>
+    <button class="modal-close" onclick="closeOverlay('modal-order')">✕</button>
+  </div>
+  <form onsubmit="submitOrder(event)">
+    <input type="hidden" id="o-id">
+    <div class="form-grid">
+      <div class="fg">
+        <label>日付<span class="req">*</span></label>
+        <input type="date" id="o-date" required>
+      </div>
+      <div class="fg">
+        <label>店舗<span class="req">*</span></label>
+        <select id="o-store" required>
+          <option value="">選択してください</option>
+          <option value="dino">ディーノ石巻</option>
+          <option value="ai">愛して人妻</option>
+        </select>
+      </div>
+
+      <!-- 顧客情報（電話番号で検索→名前オートフィル） -->
+      <div class="fg">
+        <label>電話番号</label>
+        <div style="position:relative;">
+          <input type="text" id="o-phone" placeholder="例: 09012345678"
+            oninput="onPhoneInput()" autocomplete="off"
+            style="padding-right:32px;">
+          <span id="o-phone-status" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:14px;"></span>
+        </div>
+        <!-- 候補ドロップダウン -->
+        <div id="o-phone-dropdown" style="display:none;position:absolute;z-index:300;background:var(--bg3);border:1px solid var(--line2);border-radius:var(--r);padding:4px 0;min-width:240px;box-shadow:0 4px 16px rgba(0,0,0,.4);">
+        </div>
+      </div>
+      <div class="fg">
+        <label>顧客名</label>
+        <div style="position:relative;">
+          <input type="text" id="o-customer-name" placeholder="未入力でも可">
+          <span id="o-customer-badge" style="display:none;position:absolute;right:8px;top:50%;transform:translateY(-50%);" class="badge badge-blue" style="font-size:10px;"></span>
+        </div>
+      </div>
+
+      <div class="fg">
+        <label>キャスト名<span class="req">*</span></label>
+        <input type="text" id="o-cast" required placeholder="源氏名">
+      </div>
+      <div class="fg">
+        <label>区分<span class="req">*</span></label>
+        <div style="display:flex;gap:8px;margin-top:2px;">
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;flex:1;background:var(--bg3);border:1px solid var(--line2);border-radius:var(--r);padding:9px 12px;transition:all .15s;" id="o-hon-label">
+            <input type="radio" name="o-type" value="honshimei" id="o-hon-radio" style="accent-color:var(--gold);flex-shrink:0;" onchange="highlightOrderType()">
+            <span style="font-size:13px;font-weight:600;color:var(--gold2);">本指名</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;flex:1;background:var(--bg3);border:1px solid var(--line2);border-radius:var(--r);padding:9px 12px;transition:all .15s;" id="o-new-label">
+            <input type="radio" name="o-type" value="new" id="o-new-radio" style="accent-color:var(--green);flex-shrink:0;" onchange="highlightOrderType()">
+            <span style="font-size:13px;font-weight:600;color:var(--green);">新規</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;flex:1;background:var(--bg3);border:1px solid var(--line2);border-radius:var(--r);padding:9px 12px;transition:all .15s;" id="o-other-label">
+            <input type="radio" name="o-type" value="other" id="o-other-radio" style="accent-color:var(--text2);flex-shrink:0;" onchange="highlightOrderType()">
+            <span style="font-size:13px;font-weight:600;color:var(--text2);">その他</span>
+          </label>
+        </div>
+      </div>
+      <div class="fg"><label>総売（円）</label><input type="number" id="o-sales" placeholder="0" min="0" oninput="autoCalcProfit()"></div>
+      <div class="fg"><label>キャスト給料（円）</label><input type="number" id="o-castpay" placeholder="0" min="0" oninput="autoCalcProfit()"></div>
+      <div class="fg"><label>粗利（円）</label><input type="number" id="o-profit" placeholder="自動計算" min="0"></div>
+      <div class="fg full"><label>備考</label><input type="text" id="o-note" placeholder="コース名・特記事項など"></div>
+    </div>
+    <div class="form-actions">
+      <button type="button" class="btn btn-ghost" onclick="closeOverlay('modal-order')">キャンセル</button>
+      <button type="submit" class="btn btn-gold">💾 保存</button>
+    </div>
+  </form>
+</div>
+</div>
+
+<!-- 詳細モーダル -->
+<div class="overlay" id="modal-detail" onclick="closeOverlay('modal-detail')">
+<div class="modal" onclick="event.stopPropagation()" style="max-width:760px;">
+  <div class="modal-head">
+    <div class="modal-title">報告詳細</div>
+    <button class="modal-close" onclick="closeOverlay('modal-detail')">✕</button>
+  </div>
+  <div id="detail-body"></div>
+</div>
+</div>
+
+<div class="toasts" id="toasts"></div>
+
+<!-- ════ SCRIPT ════ -->
+<script>
+const API = 'http://localhost:3000/api';
+const $ = id => document.getElementById(id);
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function fmt(n){ return Number(n||0).toLocaleString('ja-JP'); }
+function today(){ return new Date().toISOString().split('T')[0]; }
+function thisMonth(){
+  const d=new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+}
+async function api(method,url,body){
+  const opt={method,headers:{'Content-Type':'application/json'}};
+  if(body) opt.body=JSON.stringify(body);
+  return fetch(API+url,opt).then(r=>r.json());
+}
+function toast(msg,type='ok'){
+  const c=$('toasts'),el=document.createElement('div');
+  el.className=`toast ${type}`;el.textContent=msg;
+  c.appendChild(el);setTimeout(()=>el.remove(),3000);
+}
+function openOverlay(id){ $(id).classList.add('show'); }
+function closeOverlay(id){ $(id).classList.remove('show'); }
+
+// ─── ナビ ─────────────────────────────────────────────
+function go(page){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  $('page-'+page).classList.add('active');
+  $('nav-'+page).classList.add('active');
+  if(page==='dashboard') loadDashboard();
+  if(page==='order')     loadOrders();
+  if(page==='customer')  loadCustomers();
+  if(page==='report')    loadReports();
+  if(page==='cast')      loadCasts();
+  if(page==='shift')     loadShift();
+  if(page==='traffic')   loadTraffic();
+  if(page==='goal')      loadGoal();
+  closeSidebar();
+}
+function toggleSidebar(){ $('sidebar').classList.toggle('open'); }
+function closeSidebar(){ if(window.innerWidth<=820) $('sidebar').classList.remove('open'); }
+
+// ─── 顧客管理 ──────────────────────────────────────────
+
+async function loadCustomers(filterPhone) {
+  const all = await api('GET', '/customers');
+
+  // 統計
+  const now = new Date();
+  const thisMonthStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  $('cust-total').textContent      = all.length;
+  $('cust-this-month').textContent = all.filter(c => c.lastVisit && c.lastVisit.startsWith(thisMonthStr)).length;
+  $('cust-repeater').textContent   = all.filter(c => c.totalVisits >= 2).length;
+
+  // フィルタ
+  let rows = all;
+  if (filterPhone) {
+    const norm = filterPhone.replace(/[^\d]/g, '');
+    rows = all.filter(c => String(c.phone).includes(norm));
+  }
+
+  const tbody = $('customer-body'), empty = $('customer-empty');
+  if (!rows.length) { tbody.innerHTML = ''; empty.style.display = ''; return; }
+  empty.style.display = 'none';
+
+  const storeLabel = { dino:'ディーノ石巻', ai:'愛して人妻', '':'—' };
+  tbody.innerHTML = rows.map(c => {
+    const visits = c.totalVisits || 0;
+    const badge = visits >= 5
+      ? `<span class="badge badge-gold" style="margin-left:4px">常連</span>`
+      : visits >= 2 ? `<span class="badge badge-blue" style="margin-left:4px">リピーター</span>` : '';
+    return `<tr>
+      <td style="font-weight:500">${esc(c.name || '—')}${badge}</td>
+      <td style="font-family:'DM Mono',monospace;font-size:12px">${esc(c.phone)}</td>
+      <td class="num" style="font-weight:700;color:${visits>=5?'var(--gold2)':visits>=2?'var(--blue)':'var(--text)'}">${visits}</td>
+      <td style="font-size:12px;color:var(--text2)">${esc(c.firstVisit||'—')}</td>
+      <td style="font-size:12px;color:var(--text2)">${esc(c.lastVisit||'—')}</td>
+      <td style="font-size:13px">${c.lastCast     ? `<span style="color:var(--pink);font-weight:500">${esc(c.lastCast)}</span>`     : '<span style="color:var(--text3)">—</span>'}</td>
+      <td style="font-size:13px">${c.favoriteCast ? `<span style="color:var(--gold2);font-weight:500">${esc(c.favoriteCast)}</span>` : '<span style="color:var(--text3)">—</span>'}</td>
+      <td><span style="font-size:12px;color:var(--text2)">${storeLabel[c.store]||c.store||'—'}</span></td>
+      <td>
+        <button class="btn btn-red btn-sm" onclick="deleteCustomer(${c.id})">削除</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function searchCustomers() {
+  loadCustomers($('cust-search').value.trim());
+}
+
+async function deleteCustomer(id) {
+  if (!confirm('この顧客データを削除しますか？')) return;
+  await api('DELETE', `/customers/${id}`);
+  toast('🗑️ 削除しました');
+  loadCustomers();
+}
+
+// ─── 電話番号リアルタイム検索（オーダーモーダル内）──────
+let _phoneTimer = null;
+let _matchedCustomer = null;
+
+function onPhoneInput() {
+  const phone = $('o-phone').value.replace(/[^\d]/g, '');
+  const status = $('o-phone-status');
+  const badge  = $('o-customer-badge');
+  const dropdown = $('o-phone-dropdown');
+
+  badge.style.display  = 'none';
+  dropdown.style.display = 'none';
+  _matchedCustomer = null;
+
+  if (phone.length < 4) { status.textContent = ''; return; }
+
+  status.textContent = '…';
+  clearTimeout(_phoneTimer);
+  _phoneTimer = setTimeout(async () => {
+    try {
+      const hit = await api('GET', `/customers/search?phone=${encodeURIComponent(phone)}`);
+      if (hit && hit.id) {
+        _matchedCustomer = hit;
+        // 名前をオートフィル（空欄の場合のみ）
+        if (!$('o-customer-name').value.trim()) {
+          $('o-customer-name').value = hit.name || '';
+        }
+        status.textContent = '✅';
+        badge.style.display = 'inline-flex';
+        badge.textContent   = `${hit.totalVisits}回目`;
+        badge.className     = `badge ${hit.totalVisits >= 5 ? 'badge-gold' : 'badge-blue'}`;
+      } else {
+        status.textContent = '';
+        badge.style.display = 'none';
+      }
+    } catch { status.textContent = ''; }
+  }, 300);
+}
+
+// モーダルを閉じたときにドロップダウンも閉じる
+document.addEventListener('click', () => {
+  const dd = document.getElementById('o-phone-dropdown');
+  if (dd) dd.style.display = 'none';
+});
+
+// ─── オーダー ──────────────────────────────────────────
+const STORE_LABEL = { dino:'ディーノ石巻', ai:'愛して人妻' };
+const STORE_COLOR = { dino:'var(--gold2)', ai:'var(--pink)' };
+
+// 集計カードを更新する（渡したデータ配列から直接計算）
+function updateCardsFromData(rows) {
+  const calc = (rs) => ({
+    sales:     rs.reduce((s,r) => s + (+r.sales    || 0), 0),
+    castPay:   rs.reduce((s,r) => s + (+r.castPay  || 0), 0),
+    profit:    rs.reduce((s,r) => s + (+r.profit   || 0), 0),
+    count:     rs.length,
+    honshimei: rs.filter(r => r.isHonshimei).length,
+  });
+
+  // 店舗フィルター中は全件を別途取得して集計する
+  const storeFilter = document.getElementById('of-store').value;
+  if (storeFilter) {
+    // フィルター中は表示行が片方しかないのでAPIで全件集計
+    fetchAndUpdateCards();
+    return;
+  }
+
+  const dino  = calc(rows.filter(r => r.store === 'dino'));
+  const ai    = calc(rows.filter(r => r.store === 'ai'));
+  const total = {
+    sales:     dino.sales     + ai.sales,
+    castPay:   dino.castPay   + ai.castPay,
+    profit:    dino.profit    + ai.profit,
+    count:     dino.count     + ai.count,
+    honshimei: dino.honshimei + ai.honshimei,
+  };
+
+  const set = (elemId, val, money) => {
+    const el = document.getElementById(elemId);
+    if (el) el.textContent = money ? fmt(val) : String(val || 0);
+  };
+  set('rt-dino-sales',    dino.sales,     true);
+  set('rt-dino-castpay',  dino.castPay,   true);
+  set('rt-dino-profit',   dino.profit,    true);
+  set('rt-dino-count',    dino.count,     false);
+  set('rt-dino-hon',      dino.honshimei, false);
+  set('rt-ai-sales',      ai.sales,       true);
+  set('rt-ai-castpay',    ai.castPay,     true);
+  set('rt-ai-profit',     ai.profit,      true);
+  set('rt-ai-count',      ai.count,       false);
+  set('rt-ai-hon',        ai.honshimei,   false);
+  set('rt-total-sales',   total.sales,    true);
+  set('rt-total-castpay', total.castPay,  true);
+  set('rt-total-profit',  total.profit,   true);
+  set('rt-total-count',   total.count,    false);
+  set('rt-total-hon',     total.honshimei,false);
+}
+
+// summary APIで全件集計してカード更新（店舗フィルター時のフォールバック）
+async function fetchAndUpdateCards() {
+  const date  = document.getElementById('of-date').value;
+  const month = document.getElementById('of-month').value;
+  // date か month のどちらかは必須
+  const qs = date ? `date=${encodeURIComponent(date)}` : month ? `month=${encodeURIComponent(month)}` : '';
+  if (!qs) { updateCardsFromData([]); return; }
+  try {
+    const s = await fetch(`${API}/orders/summary?${qs}`).then(r => r.json());
+    const set = (elemId, val, money) => {
+      const el = document.getElementById(elemId);
+      if (el) el.textContent = money ? fmt(val || 0) : String(val || 0);
+    };
+    const d = s.dino || {}, a = s.ai || {};
+    const t = {
+      sales:     (d.sales     || 0) + (a.sales     || 0),
+      castPay:   (d.castPay   || 0) + (a.castPay   || 0),
+      profit:    (d.profit    || 0) + (a.profit    || 0),
+      count:     (d.count     || 0) + (a.count     || 0),
+      honshimei: (d.honshimei || 0) + (a.honshimei || 0),
+    };
+    set('rt-dino-sales',    d.sales,     true);
+    set('rt-dino-castpay',  d.castPay,   true);
+    set('rt-dino-profit',   d.profit,    true);
+    set('rt-dino-count',    d.count,     false);
+    set('rt-dino-hon',      d.honshimei, false);
+    set('rt-ai-sales',      a.sales,     true);
+    set('rt-ai-castpay',    a.castPay,   true);
+    set('rt-ai-profit',     a.profit,    true);
+    set('rt-ai-count',      a.count,     false);
+    set('rt-ai-hon',        a.honshimei, false);
+    set('rt-total-sales',   t.sales,     true);
+    set('rt-total-castpay', t.castPay,   true);
+    set('rt-total-profit',  t.profit,    true);
+    set('rt-total-count',   t.count,     false);
+    set('rt-total-hon',     t.honshimei, false);
+  } catch(e) {
+    console.error('fetchAndUpdateCards error:', e);
+  }
+}
+
+// ── オーダー一覧の読み込み ──
+// ★ 常に「取得したデータそのもの」でカードを更新するので完全一致が保証される
+async function loadOrders() {
+  const dateVal  = document.getElementById('of-date').value;
+  const monthVal = document.getElementById('of-month').value;
+  const storeVal = document.getElementById('of-store').value;
+
+  // クエリ文字列を組み立て（date と month は排他的に使う）
+  const params = new URLSearchParams();
+  if (dateVal)  params.set('date',  dateVal);
+  else if (monthVal) params.set('month', monthVal);
+  if (storeVal) params.set('store', storeVal);
+
+  try {
+    const rows = await fetch(`${API}/orders?${params.toString()}`).then(r => r.json());
+
+    // ① 取得したデータでカードを即時更新（一覧と完全一致）
+    updateCardsFromData(rows);
+
+    // ② テーブル描画（0件でもカードは①で更新済み）
+    const tbody = document.getElementById('order-body');
+    const empty = document.getElementById('order-empty');
+
+    if (!rows.length) {
+      tbody.innerHTML = '';
+      empty.style.display = '';
+      return;
+    }
+    empty.style.display = 'none';
+    tbody.innerHTML = rows.map(r => {
+      const storeBadge = `<span style="font-size:11px;font-weight:600;color:${STORE_COLOR[r.store]||'var(--text2)'}">${STORE_LABEL[r.store]||r.store}</span>`;
+      const typeTags = [
+        r.isHonshimei ? '<span class="tag-hon">本指名</span>' : '',
+        r.isNew       ? '<span class="tag-new">新規</span>'   : '',
+      ].join('');
+      return `<tr>
+        <td style="white-space:nowrap;font-family:'DM Mono',monospace;font-size:12px">${esc(r.date)}</td>
+        <td>${storeBadge}</td>
+        <td style="font-weight:500">${esc(r.castName)}</td>
+        <td class="num">${fmt(r.sales)}</td>
+        <td class="num">${fmt(r.castPay)}</td>
+        <td class="num">${fmt(r.profit)}</td>
+        <td>${typeTags || '<span style="color:var(--text3);font-size:11px">その他</span>'}</td>
+        <td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text2);font-size:12px">${esc(r.note||'')}</td>
+        <td>
+          <div style="display:flex;gap:5px">
+            <button class="btn btn-ghost btn-sm" onclick="editOrder(${r.id})">編集</button>
+            <button class="btn btn-red btn-sm"   onclick="delOrder(${r.id})">削除</button>
+          </div>
+        </td>
+      </tr>`;
+    }).join('');
+  } catch(e) {
+    console.error('loadOrders error:', e);
+    toast('❌ 読み込みに失敗しました', 'err');
+  }
+}
+
+function clearOF(){
+  document.getElementById('of-date').value  = today();
+  document.getElementById('of-month').value = '';
+  document.getElementById('of-store').value = '';
+  loadOrders();
+}
+
+// ── オーダーモーダル ──
+function openOrderModal(prefillDate){
+  document.getElementById('o-id').value = '';
+  document.getElementById('modal-order-title').textContent = 'オーダー入力';
+  document.getElementById('modal-order').querySelector('form').reset();
+  document.getElementById('o-date').value = prefillDate || document.getElementById('of-date').value || today();
+  // 顧客フィールドリセット
+  document.getElementById('o-phone').value = '';
+  document.getElementById('o-customer-name').value = '';
+  document.getElementById('o-phone-status').textContent = '';
+  document.getElementById('o-customer-badge').style.display = 'none';
+  _matchedCustomer = null;
+  resetOrderTypeHighlight();
+  openOverlay('modal-order');
+}
+
+function highlightOrderType(){
+  const v = document.querySelector('input[name="o-type"]:checked')?.value;
+  document.getElementById('o-hon-label').style.borderColor   = v==='honshimei' ? 'var(--gold)'    : 'var(--line2)';
+  document.getElementById('o-hon-label').style.background    = v==='honshimei' ? 'var(--gold-bg)' : 'var(--bg3)';
+  document.getElementById('o-new-label').style.borderColor   = v==='new'       ? 'var(--green)'   : 'var(--line2)';
+  document.getElementById('o-new-label').style.background    = v==='new'       ? 'var(--green-bg)': 'var(--bg3)';
+  document.getElementById('o-other-label').style.borderColor = 'var(--line2)';
+  document.getElementById('o-other-label').style.background  = v==='other'     ? 'var(--bg4)'     : 'var(--bg3)';
+}
+function resetOrderTypeHighlight(){
+  ['o-hon-label','o-new-label','o-other-label'].forEach(id=>{
+    document.getElementById(id).style.borderColor = 'var(--line2)';
+    document.getElementById(id).style.background  = 'var(--bg3)';
+  });
+}
+
+function autoCalcProfit(){
+  const s = +document.getElementById('o-sales').value   || 0;
+  const p = +document.getElementById('o-castpay').value || 0;
+  if (s > 0) document.getElementById('o-profit').value = s - p;
+}
+
+async function editOrder(id){
+  const r = await api('GET', `/orders/${id}`);
+  document.getElementById('o-id').value      = r.id;
+  document.getElementById('modal-order-title').textContent = 'オーダー編集';
+  document.getElementById('o-date').value    = r.date         || '';
+  document.getElementById('o-store').value   = r.store        || '';
+  document.getElementById('o-phone').value   = r.customerPhone|| '';
+  document.getElementById('o-customer-name').value = r.customerName || '';
+  document.getElementById('o-cast').value    = r.castName     || '';
+  document.getElementById('o-sales').value   = r.sales        || '';
+  document.getElementById('o-castpay').value = r.castPay      || '';
+  document.getElementById('o-profit').value  = r.profit       || '';
+  document.getElementById('o-note').value    = r.note         || '';
+  // 顧客バッジリセット
+  $('o-phone-status').textContent  = '';
+  $('o-customer-badge').style.display = 'none';
+  _matchedCustomer = null;
+  // 電話番号があれば顧客検索
+  if (r.customerPhone) onPhoneInput();
+  resetOrderTypeHighlight();
+  if (r.isHonshimei) document.getElementById('o-hon-radio').checked   = true;
+  else if (r.isNew)  document.getElementById('o-new-radio').checked   = true;
+  else               document.getElementById('o-other-radio').checked = true;
+  highlightOrderType();
+  openOverlay('modal-order');
+}
+
+async function submitOrder(e){
+  e.preventDefault();
+  const typeVal = document.querySelector('input[name="o-type"]:checked')?.value;
+  const body = {
+    date:         document.getElementById('o-date').value,
+    store:        document.getElementById('o-store').value,
+    customerPhone:document.getElementById('o-phone').value.replace(/[^\d]/g,''),
+    customerName: document.getElementById('o-customer-name').value.trim(),
+    castName:     document.getElementById('o-cast').value,
+    sales:        +document.getElementById('o-sales').value   || 0,
+    castPay:      +document.getElementById('o-castpay').value || 0,
+    profit:       +document.getElementById('o-profit').value  || 0,
+    isHonshimei:  typeVal === 'honshimei',
+    isNew:        typeVal === 'new',
+    note:         document.getElementById('o-note').value,
+  };
+  const id = document.getElementById('o-id').value;
+  try {
+    if (id) await api('PUT',  `/orders/${id}`, body);
+    else    await api('POST', '/orders',       body);
+    toast(id ? '✅ 更新しました' : '✅ オーダーを保存しました');
+    closeOverlay('modal-order');
+    await loadOrders();
+  } catch(e) {
+    console.error('submitOrder error:', e);
+    toast('❌ 保存失敗', 'err');
+  }
+}
+
+async function delOrder(id){
+  if (!confirm('このオーダーを削除しますか？')) return;
+  try {
+    await api('DELETE', `/orders/${id}`);
+    toast('🗑️ 削除しました');
+    await loadOrders();   // ← await で完了を待ち、カードも確実に更新
+  } catch(e) {
+    console.error('delOrder error:', e);
+    toast('❌ 削除失敗', 'err');
+  }
+}
+
+// ─── ダッシュボード ────────────────────────────────────
+const KPI_DEFS = [
+  {key:'sales',         label:'売上',       unit:'円',   colorD:'kpi-gold', colorA:'kpi-gold', colorT:'kpi-gold',  fmtNum:true},
+  {key:'profit',        label:'粗利',       unit:'円',   colorD:'kpi-green',colorA:'kpi-green',colorT:'kpi-green', fmtNum:true},
+  {key:'count',         label:'本数',       unit:'本',   colorD:'kpi-blue', colorA:'kpi-blue', colorT:'kpi-blue',  fmtNum:false},
+  {key:'honshimei',     label:'本指名',     unit:'本',   colorD:'kpi-pink', colorA:'kpi-pink', colorT:'kpi-pink',  fmtNum:false},
+  {key:'kadouAvg',      label:'稼働 (AV)',  unit:'人/日',colorD:'',         colorA:'',         colorT:'',          fmtNum:false},
+  {key:'tel',           label:'TEL総件数',  unit:'件',   colorD:'',         colorA:'',         colorT:'',          fmtNum:false},
+  {key:'avgTanka',      label:'平均単価',   unit:'円/本',colorD:'',         colorA:'',         colorT:'',          fmtNum:true},
+  {key:'honshimeiRate', label:'本指名率',   unit:'%',    colorD:'',         colorA:'',         colorT:'',          fmtNum:false},
+  {key:'seiyakuRate',   label:'成約率',     unit:'%',    colorD:'',         colorA:'',         colorT:'',          fmtNum:false},
+];
+
+function buildKpiGrid(cid, data, colorKey){
+  $(cid).innerHTML = KPI_DEFS.map(d=>{
+    const val = data[d.key]??0;
+    const cls = d[colorKey]||'';
+    const disp = d.fmtNum ? fmt(val) : val;
+    const sub = d.key==='kadouAvg'
+      ? `<div class="kpi-sub">${d.unit}</div><div style="font-size:10px;color:var(--text3);margin-top:3px">営業${data.eigyoDays||0}日 / 計${data.kadouSum||0}人</div>`
+      : `<div class="kpi-sub">${d.unit}</div>`;
+    return `<div class="kpi ${cls}"><div class="kpi-label">${d.label}</div><div class="kpi-value">${disp}</div>${sub}</div>`;
+  }).join('');
+}
+
+async function loadDashboard(){
+  const m=$('dash-month').value||thisMonth();
+  $('dash-month').value=m;
+  $('dash-month-label').textContent=`${m.replace('-','年')}月`;
+  const s=await api('GET',`/stats?month=${m}`);
+  buildKpiGrid('kpi-dino', s.dino,  'colorD');
+  buildKpiGrid('kpi-ai',   s.ai,    'colorA');
+  buildKpiGrid('kpi-total',s.total, 'colorT');
+  const tbody=$('daily-body');
+  tbody.innerHTML=s.daily.length
+    ?s.daily.map(d=>`<tr>
+        <td style="font-family:'DM Mono',monospace;font-size:12px">${esc(d.date)}</td>
+        <td class="num" style="color:var(--gold2)">${fmt(d.dino_sales)}</td>
+        <td class="num" style="color:var(--gold2)">${d.dino_count}</td>
+        <td class="num" style="color:var(--gold2)">${d.dino_kadou}<span style="font-size:10px;color:var(--text3)">人</span></td>
+        <td class="num" style="color:var(--pink)">${fmt(d.ai_sales)}</td>
+        <td class="num" style="color:var(--pink)">${d.ai_count}</td>
+        <td class="num" style="color:var(--pink)">${d.ai_kadou}<span style="font-size:10px;color:var(--text3)">人</span></td>
+        <td class="num" style="color:var(--green);font-weight:500">${fmt(d.total_sales)}</td>
+      </tr>`).join('')
+    :`<tr><td colspan="8" style="text-align:center;color:var(--text3);padding:30px">データなし</td></tr>`;
+}
+
+// ─── 終業報告 ──────────────────────────────────────────
+async function loadReports(){
+  const m=$('rf-month').value,st=$('rf-staff').value;
+  let url='/reports?';
+  if(m)  url+=`month=${m}&`;
+  if(st) url+=`staff=${encodeURIComponent(st)}`;
+  const data=await api('GET',url);
+  const tbody=$('report-body'),empty=$('report-empty');
+  if(!data.length){tbody.innerHTML='';empty.style.display='';return;}
+  empty.style.display='none';
+  tbody.innerHTML=data.map(r=>{
+    const d=r.dino||{},a=r.ai||{};
+    return `<tr>
+      <td style="white-space:nowrap;font-family:'DM Mono',monospace;font-size:12px">${esc(r.date)}</td>
+      <td><b>${esc(r.staff)}</b></td>
+      <td class="num" style="color:var(--gold2)">${fmt(d.sales)}</td>
+      <td class="num" style="color:var(--gold2)">${d.count||0}</td>
+      <td class="num" style="color:var(--gold2)">${d.kadou||0}</td>
+      <td class="num" style="color:var(--pink)">${fmt(a.sales)}</td>
+      <td class="num" style="color:var(--pink)">${a.count||0}</td>
+      <td class="num" style="color:var(--pink)">${a.kadou||0}</td>
+      <td>
+        <div style="display:flex;gap:5px">
+          <button class="btn btn-ghost btn-sm" onclick="showDetail(${r.id})">詳細</button>
+          <button class="btn btn-ghost btn-sm" onclick="editReport(${r.id})">編集</button>
+          <button class="btn btn-red btn-sm"   onclick="delReport(${r.id})">削除</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+function clearRF(){$('rf-month').value='';$('rf-staff').value='';loadReports();}
+
+// オーダー集計をフォームに反映（0のフィールドは0を明示的にセット）
+function fillStoreFromSummary(prefix, s){
+  if(!s) return;
+  $(prefix+'-sales').value   = s.sales;
+  $(prefix+'-profit').value  = s.profit;
+  $(prefix+'-count').value   = s.count;
+  $(prefix+'-hon').value     = s.honshimei;
+  // castPay は終業報告フォームに項目がないためスキップ
+}
+
+let _reportOrderSummary = null;
+
+// 日付変更時にオーダー集計を取得して自動反映（手動修正はその後自由）
+async function checkOrdersForDate(date){
+  if(!date){ hideBanner(); return; }
+  try {
+    const s = await api('GET', `/orders/summary?date=${date}`);
+    _reportOrderSummary = s;
+    const dinoCount = s.dino.count, aiCount = s.ai.count;
+    const total = dinoCount + aiCount;
+
+    if(total === 0){ hideBanner(); return; }
+
+    // バナー表示
+    $('report-order-banner').style.display = 'flex';
+    $('report-order-info').textContent =
+      `ディーノ ${dinoCount}件 ${fmt(s.dino.sales)}円／愛して ${aiCount}件 ${fmt(s.ai.sales)}円`;
+
+    // バッジ
+    const db=$('dino-order-badge'), ab=$('ai-order-badge');
+    if(dinoCount>0){ db.style.display='inline-flex'; db.textContent=`${dinoCount}件`; }
+    else { db.style.display='none'; }
+    if(aiCount>0){ ab.style.display='inline-flex'; ab.textContent=`${aiCount}件`; }
+    else { ab.style.display='none'; }
+
+    // 自動反映（上書き）
+    fillStoreFromSummary('d', s.dino);
+    fillStoreFromSummary('a', s.ai);
+  } catch { hideBanner(); }
+}
+
+// 🔄 再反映ボタン用
+function reapplyOrderSummary(){
+  if(!_reportOrderSummary) return;
+  fillStoreFromSummary('d', _reportOrderSummary.dino);
+  fillStoreFromSummary('a', _reportOrderSummary.ai);
+  toast('✅ 再反映しました');
+}
+
+function hideBanner(){
+  $('report-order-banner').style.display='none';
+  $('dino-order-badge').style.display='none';
+  $('ai-order-badge').style.display='none';
+  _reportOrderSummary = null;
+}
+
+function clearReportForm(){
+  document.getElementById('modal-report').querySelector('form').reset();
+  $('r-date').value=today();
+  hideBanner();
+}
+
+function openReportModal(){
+  $('r-id').value='';
+  $('modal-report-title').textContent='終業報告 入力';
+  clearReportForm();
+  // 日付変更リスナー（重複登録を防ぐためいったん除去してから登録）
+  const dateEl = $('r-date');
+  const oldHandler = dateEl._orderCheckHandler;
+  if(oldHandler) dateEl.removeEventListener('change', oldHandler);
+  const handler = function(){ checkOrdersForDate(this.value); };
+  dateEl._orderCheckHandler = handler;
+  dateEl.addEventListener('change', handler);
+  // 初期日付でチェック
+  checkOrdersForDate(today());
+  openOverlay('modal-report');
+}
+
+function fillStore(prefix,obj){
+  const x=obj||{};
+  $(prefix+'-sales').value  = x.sales  ||'';
+  $(prefix+'-profit').value = x.profit ||'';
+  $(prefix+'-count').value  = x.count  ||'';
+  $(prefix+'-hon').value    = x.honshimei||'';
+  $(prefix+'-kadou').value  = x.kadou  ||'';
+  $(prefix+'-tel').value    = x.tel    ||'';
+  $(prefix+'-t1').value     = x.tel_9_12 ||'';
+  $(prefix+'-t2').value     = x.tel_12_15||'';
+  $(prefix+'-t3').value     = x.tel_15_18||'';
+  $(prefix+'-t4').value     = x.tel_18_21||'';
+  $(prefix+'-t5').value     = x.tel_21_24||'';
+  $(prefix+'-t6').value     = x.tel_24_27||'';
+}
+function readStore(prefix){
+  return {
+    sales:     +$(prefix+'-sales').value ||0,
+    profit:    +$(prefix+'-profit').value||0,
+    count:     +$(prefix+'-count').value ||0,
+    honshimei: +$(prefix+'-hon').value   ||0,
+    kadou:     +$(prefix+'-kadou').value ||0,
+    tel:       +$(prefix+'-tel').value   ||0,
+    tel_9_12:  +$(prefix+'-t1').value    ||0,
+    tel_12_15: +$(prefix+'-t2').value    ||0,
+    tel_15_18: +$(prefix+'-t3').value    ||0,
+    tel_18_21: +$(prefix+'-t4').value    ||0,
+    tel_21_24: +$(prefix+'-t5').value    ||0,
+    tel_24_27: +$(prefix+'-t6').value    ||0,
+  };
+}
+
+async function editReport(id){
+  const r=await api('GET',`/reports/${id}`);
+  $('r-id').value=r.id;
+  $('modal-report-title').textContent='終業報告 編集';
+  $('r-date').value=r.date||'';
+  $('r-staff').value=r.staff||'';
+  fillStore('d', r.dino);
+  fillStore('a', r.ai);
+  $('r-miss').value=r.miss||'';
+  $('r-improve').value=r.improve||'';
+  $('r-handover').value=r.handover||'';
+  hideBanner();
+  await checkOrdersForDate(r.date);
+  openOverlay('modal-report');
+}
+async function submitReport(e){
+  e.preventDefault();
+  const body={
+    date:    $('r-date').value,
+    staff:   $('r-staff').value,
+    dino:    readStore('d'),
+    ai:      readStore('a'),
+    miss:    $('r-miss').value,
+    improve: $('r-improve').value,
+    handover:$('r-handover').value,
+  };
+  const id=$('r-id').value;
+  try{
+    if(id) await api('PUT', `/reports/${id}`,body);
+    else   await api('POST','/reports',      body);
+    toast(id?'✅ 更新しました':'✅ 報告を送信しました');
+    closeOverlay('modal-report');
+    loadReports();
+    loadDashboard();
+  }catch{toast('❌ 送信失敗','err');}
+}
+async function delReport(id){
+  if(!confirm('削除しますか？'))return;
+  await api('DELETE',`/reports/${id}`);
+  toast('🗑️ 削除しました');loadReports();
+}
+
+const TEL_SLOT_LABELS=['9〜12時','12〜15時','15〜18時','18〜21時','21〜24時','24〜27時'];
+const TEL_SLOT_KEYS  =['tel_9_12','tel_12_15','tel_15_18','tel_18_21','tel_21_24','tel_24_27'];
+
+async function showDetail(id){
+  const r=await api('GET',`/reports/${id}`);
+  const fv=(label,val,mono=false)=>`<div style="margin-bottom:10px">
+    <div style="font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:var(--text3);margin-bottom:3px">${label}</div>
+    <div style="background:var(--bg3);border:1px solid var(--line);border-radius:8px;padding:8px 12px;font-size:13px;${mono?'font-family:DM Mono,monospace':''}">${esc(String(val||'—'))}</div>
+  </div>`;
+  const storeBlock=(label,color,obj)=>{
+    const x=obj||{};
+    const avg = +x.count>0 ? Math.round(+x.sales/+x.count*10)/10 : 0;
+    const hr  = +x.count>0 ? (+x.honshimei/+x.count*100).toFixed(1) : 0;
+    const sr  = +x.tel>0   ? (+x.count/+x.tel*100).toFixed(1) : 0;
+    const telSlots=TEL_SLOT_KEYS.map((k,i)=>`<span style="font-size:12px;margin-right:10px">${TEL_SLOT_LABELS[i]}: <b>${x[k]||0}</b></span>`).join('');
+    return `<div style="border:1px solid var(--line2);border-radius:12px;padding:16px;margin-bottom:14px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+        <div style="width:3px;height:16px;background:${color};border-radius:2px;"></div>
+        <span style="font-size:14px;font-weight:700;color:${color}">${label}</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        ${fv('売上',fmt(x.sales)+'円')}${fv('粗利',fmt(x.profit)+'円')}
+        ${fv('本数',x.count+'本')}${fv('本指名',x.honshimei+'本')}
+        ${fv('稼働（実数）',x.kadou+'人')}${fv('TEL総件数',x.tel+'件')}
+        ${fv('平均単価',fmt(avg)+'円/本')}${fv('本指名率',hr+'%')}
+        ${fv('成約率',sr+'%')}
+      </div>
+      <div style="margin-top:10px;font-size:11px;color:var(--text3);font-weight:500;letter-spacing:.06em;text-transform:uppercase;margin-bottom:5px;">TEL時間帯別</div>
+      <div style="background:var(--bg3);border:1px solid var(--line);border-radius:8px;padding:10px 12px;flex-wrap:wrap;display:flex;">${telSlots}</div>
+    </div>`;
+  };
+  $('detail-body').innerHTML=`
+    <div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;align-items:center;">
+      <span style="font-family:'DM Mono',monospace;font-size:13px;color:var(--text2)">${esc(r.date)}</span>
+      <span style="font-size:14px;font-weight:600">${esc(r.staff)}</span>
+    </div>
+    ${storeBlock('ディーノ石巻','var(--gold2)',r.dino)}
+    ${storeBlock('愛して人妻','var(--pink)',r.ai)}
+    ${r.miss||r.improve||r.handover ? `
+    <div style="border:1px solid var(--line2);border-radius:12px;padding:16px;margin-bottom:14px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+        <div style="width:3px;height:16px;background:var(--text3);border-radius:2px;"></div>
+        <span style="font-size:14px;font-weight:700;color:var(--text2)">引き継ぎ・コメント</span>
+      </div>
+      ${r.miss     ? fv('ミス・抜け',r.miss)       : ''}
+      ${r.improve  ? fv('改善行動', r.improve)      : ''}
+      ${r.handover ? fv('引き継ぎ', r.handover)     : ''}
+    </div>` : ''}
+    <div style="text-align:right;margin-top:4px">
+      <button class="btn btn-ghost btn-sm" onclick="closeOverlay('modal-detail');editReport(${r.id})">✏️ 編集</button>
+    </div>`;
+  openOverlay('modal-detail');
+}
+
+// ─── キャスト台帳 ──────────────────────────────────────
+async function loadCasts(){
+  const data=await api('GET','/casts');
+  const tbody=$('cast-body'),empty=$('cast-empty');
+  if(!data.length){tbody.innerHTML='';empty.style.display='';return;}
+  empty.style.display='none';
+  const sl={active:'在籍',rest:'休業',retired:'退店'};
+  const sb={active:'badge-green',rest:'badge-gold',retired:'badge-gray'};
+  tbody.innerHTML=data.map(c=>`<tr>
+    <td><b>${esc(c.name)}</b></td>
+    <td><span class="badge ${sb[c.status]||'badge-gray'}">${sl[c.status]||c.status}</span></td>
+    <td>${esc(c.period||'—')}</td>
+    <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(c.note||'—')}</td>
+    <td><div style="display:flex;gap:5px">
+      <button class="btn btn-ghost btn-sm" onclick="editCast(${c.id})">編集</button>
+      <button class="btn btn-red btn-sm" onclick="delCast(${c.id})">削除</button>
+    </div></td>
+  </tr>`).join('');
+}
+function openCastModal(){
+  $('c-id').value='';$('modal-cast-title').textContent='キャスト 追加';
+  document.getElementById('modal-cast').querySelector('form').reset();
+  openOverlay('modal-cast');
+}
+async function editCast(id){
+  const data=await api('GET','/casts');
+  const c=data.find(r=>r.id===id);if(!c)return;
+  $('c-id').value=c.id;$('modal-cast-title').textContent='キャスト 編集';
+  $('c-name').value=c.name||'';$('c-status').value=c.status||'active';
+  $('c-period').value=c.period||'';$('c-travel').value=c.travel||'';
+  $('c-note').value=c.note||'';
+  openOverlay('modal-cast');
+}
+async function submitCast(e){
+  e.preventDefault();
+  const body={name:$('c-name').value,status:$('c-status').value,
+    period:$('c-period').value,travel:$('c-travel').value,note:$('c-note').value};
+  const id=$('c-id').value;
+  try{
+    if(id) await api('PUT',`/casts/${id}`,body);
+    else   await api('POST','/casts',body);
+    toast('✅ 保存しました');closeOverlay('modal-cast');loadCasts();
+  }catch{toast('❌ 保存失敗','err');}
+}
+async function delCast(id){
+  if(!confirm('削除しますか？'))return;
+  await api('DELETE',`/casts/${id}`);toast('🗑️ 削除しました');loadCasts();
+}
+
+// ─── 出勤管理 ──────────────────────────────────────────
+const SHIFT_STATUSES=[
+  {v:'',label:'—',cls:''},{v:'work',label:'出',cls:'work'},
+  {v:'absence',label:'欠',cls:'absence'},{v:'period',label:'生',cls:'period'},
+  {v:'travel',label:'出稼',cls:'travel'},
+];
+async function loadShift(){
+  const m=$('shift-month').value||thisMonth();
+  $('shift-month').value=m;
+  const [year,mon]=m.split('-').map(Number);
+  const daysInMonth=new Date(year,mon,0).getDate();
+  const days=Array.from({length:daysInMonth},(_,i)=>`${m}-${String(i+1).padStart(2,'0')}`);
+  const [casts,shifts]=await Promise.all([api('GET','/casts'),api('GET',`/shifts?month=${m}`)]);
+  const activeCasts=casts.filter(c=>c.status!=='retired');
+  const sm={};shifts.forEach(s=>{sm[`${s.date}_${s.castId}`]=s.status||'';});
+  const wrap=$('shift-table-wrap');
+  if(!activeCasts.length){wrap.innerHTML='<div class="empty"><div class="empty-icon">👤</div><div>キャストを先に登録してください</div></div>';return;}
+  const dayHeaders=days.map(d=>{
+    const day=new Date(d).getDay();
+    const color=day===0?'var(--red)':day===6?'var(--blue)':'var(--text3)';
+    return `<div style="font-size:11px;text-align:center;color:${color};padding:4px 2px;min-width:32px">${+d.split('-')[2]}</div>`;
+  }).join('');
+  const rows=activeCasts.map(cast=>{
+    const cells=days.map(date=>{
+      const st=sm[`${date}_${cast.id}`]||'';
+      const info=SHIFT_STATUSES.find(s=>s.v===st)||SHIFT_STATUSES[0];
+      return `<div class="shift-cell ${info.cls}" onclick="cycleShift(this,'${date}',${cast.id})" data-status="${st}" style="min-width:32px">${info.label}</div>`;
+    }).join('');
+    return `<div style="display:flex;align-items:center;gap:2px;margin-bottom:2px"><div style="min-width:72px;font-size:12px;font-weight:500;padding-right:6px;white-space:nowrap">${esc(cast.name)}</div>${cells}</div>`;
+  }).join('');
+  wrap.innerHTML=`<div style="display:flex;align-items:center;gap:2px;margin-bottom:4px;padding-left:78px">${dayHeaders}</div>${rows}`;
+}
+async function cycleShift(el,date,castId){
+  const cur=el.dataset.status||'';
+  const idx=SHIFT_STATUSES.findIndex(s=>s.v===cur);
+  const next=SHIFT_STATUSES[(idx+1)%SHIFT_STATUSES.length];
+  el.className=`shift-cell ${next.cls}`;el.textContent=next.label;el.dataset.status=next.v;
+  await api('POST','/shifts',{date,castId,status:next.v});
+}
+
+// ─── 集客データ ────────────────────────────────────────
+async function loadTraffic(){
+  const m=$('tf-month').value;
+  const data=await api('GET',`/traffic?${m?'month='+m:''}`);
+  const tbody=$('traffic-body'),empty=$('traffic-empty');
+  if(!data.length){tbody.innerHTML='';empty.style.display='';return;}
+  empty.style.display='none';
+  tbody.innerHTML=data.map(r=>`<tr>
+    <td style="font-family:'DM Mono',monospace;font-size:12px">${esc(r.date)}</td>
+    <td class="num">${fmt(r.blog)}</td><td class="num">${fmt(r.review)}</td><td class="num">${fmt(r.access)}</td>
+    <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r.note||'—')}</td>
+    <td><button class="btn btn-ghost btn-sm" onclick="editTraffic('${r.date}')">編集</button></td>
+  </tr>`).join('');
+}
+function openTrafficModal(){
+  document.getElementById('modal-traffic').querySelector('form').reset();
+  $('t-date').value=today();openOverlay('modal-traffic');
+}
+async function editTraffic(date){
+  const data=await api('GET','/traffic?');
+  const r=data.find(x=>x.date===date);if(!r)return;
+  $('t-date').value=r.date;$('t-blog').value=r.blog||'';
+  $('t-review').value=r.review||'';$('t-access').value=r.access||'';
+  $('t-note').value=r.note||'';openOverlay('modal-traffic');
+}
+async function submitTraffic(e){
+  e.preventDefault();
+  const body={date:$('t-date').value,blog:+$('t-blog').value||0,
+    review:+$('t-review').value||0,access:+$('t-access').value||0,note:$('t-note').value};
+  try{await api('POST','/traffic',body);toast('✅ 保存しました');closeOverlay('modal-traffic');loadTraffic();}
+  catch{toast('❌ 保存失敗','err');}
+}
+
+// ─── 月間目標 ──────────────────────────────────────────
+async function loadGoal(){
+  const m=$('goal-month').value||thisMonth();
+  $('goal-month').value=m;
+  const g=await api('GET',`/goals?month=${m}`);
+  $('g-sales').value=g.sales||'';$('g-profit').value=g.profit||'';
+  $('g-count').value=g.count||'';$('g-hon').value=g.hon||'';
+  $('g-tel').value=g.tel||'';$('g-kadou').value=g.kadou||'';
+  const s=await api('GET',`/stats?month=${m}`);
+  const items=[
+    {label:'売上',goal:+g.sales||0,actual:s.total.sales,unit:'円'},
+    {label:'粗利',goal:+g.profit||0,actual:s.total.profit,unit:'円'},
+    {label:'本数',goal:+g.count||0,actual:s.total.count,unit:'本'},
+    {label:'本指名',goal:+g.hon||0,actual:s.total.honshimei,unit:'本'},
+    {label:'TEL',goal:+g.tel||0,actual:s.total.tel,unit:'件'},
+    {label:'稼働（合計）',goal:+g.kadou||0,actual:s.total.kadouSum,unit:'人'},
+  ];
+  $('goal-detail').innerHTML=items.map(it=>{
+    const pct=it.goal>0?Math.min(Math.round(it.actual/it.goal*100),999):0;
+    const color=pct>=100?'var(--green)':pct>=70?'var(--gold)':'var(--red)';
+    return `<div style="margin-bottom:14px">
+      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
+        <span style="color:var(--text2)">${it.label}</span>
+        <span style="font-family:'DM Mono',monospace;font-size:11px">
+          ${fmt(it.actual)} / ${fmt(it.goal)} ${it.unit}
+          ${it.goal>0?`<span style="color:${color};margin-left:4px">(${pct}%)</span>`:''}
+        </span>
+      </div>
+      ${it.goal>0?`<div class="progress-wrap"><div class="progress-bar" style="width:${Math.min(pct,100)}%;background:${color}"></div></div>`:'<div style="font-size:11px;color:var(--text3)">目標未設定</div>'}
+    </div>`;
+  }).join('');
+}
+async function saveGoal(){
+  const m=$('goal-month').value||thisMonth();
+  const body={month:m,sales:+$('g-sales').value||0,profit:+$('g-profit').value||0,
+    count:+$('g-count').value||0,hon:+$('g-hon').value||0,
+    tel:+$('g-tel').value||0,kadou:+$('g-kadou').value||0};
+  try{await api('POST','/goals',body);toast('✅ 目標を保存しました');loadGoal();}
+  catch{toast('❌ 保存失敗','err');}
+}
+
+// ─── 初期化 ────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded',()=>{
+  const now=new Date();
+  $('today-label').textContent=`${now.getFullYear()}/${now.getMonth()+1}/${now.getDate()}`;
+  $('dash-month').value=thisMonth();
+  $('shift-month').value=thisMonth();
+  $('rf-month').value=thisMonth();
+  $('of-date').value=today();   // オーダーは今日の日付をデフォルト
+  $('of-month').value='';       // 月フィルターは空（日付フィルター優先）
+  $('tf-month').value=thisMonth();
+  $('goal-month').value=thisMonth();
+  loadDashboard();
+});
+</script>
+</body>
+</html>
